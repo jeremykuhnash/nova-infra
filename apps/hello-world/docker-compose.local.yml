@@ -1,0 +1,39 @@
+version: '3.8'
+
+# Use this compose file when running locally without Docker
+# It configures the app to use local file system paths
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tf-visualizer
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
+      # Configure paths that the API should scan
+      - TF_SCAN_PATHS=/app/project/terraform,/app/project/helm
+      - DEFAULT_SCAN_PATH=/app/project/terraform
+    volumes:
+      # Mount the entire parent directory to access all project files
+      # Adjust these paths based on where you run docker-compose from
+      - ${PROJECT_ROOT:-../..}:/app/project:ro
+      # Alternative: mount specific directories
+      # - ${TF_DIR:-../../terraform}:/app/project/terraform:ro
+      # - ${HELM_DIR:-../../helm}:/app/project/helm:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - tf-network
+
+networks:
+  tf-network:
+    driver: bridge

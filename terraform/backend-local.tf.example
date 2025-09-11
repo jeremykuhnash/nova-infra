@@ -1,0 +1,11 @@
+# Local backend configuration for development
+# To use local backend instead of S3:
+# 1. Copy this file: cp backend-local.tf.example backend-local.tf
+# 2. Comment out or remove backend.tf
+# 3. Run: terraform init -reconfigure
+
+terraform {
+  backend "local" {
+    path = "terraform.tfstate"
+  }
+}

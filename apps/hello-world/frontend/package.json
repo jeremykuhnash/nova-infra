@@ -1,0 +1,58 @@
+{
+  "name": "tf-visualizer-frontend",
+  "version": "1.0.0",
+  "description": "Terraform Infrastructure Visualizer Dashboard",
+  "private": true,
+  "dependencies": {
+    "@projectstorm/react-diagrams": "^6.7.4",
+    "@projectstorm/react-canvas-core": "^6.7.4",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "axios": "^1.6.0",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.0",
+    "@types/lodash": "^4.14.200",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
+    "eslint": "^8.54.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.1.0",
+    "typescript": "^5.2.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1",
+    "ts-loader": "^9.5.0",
+    "html-webpack-plugin": "^5.5.3",
+    "css-loader": "^6.8.1",
+    "style-loader": "^3.3.3",
+    "file-loader": "^6.2.0"
+  },
+  "scripts": {
+    "start": "webpack serve --mode development --open",
+    "build": "webpack --mode production",
+    "test": "echo \"No tests configured\"",
+    "lint": "eslint --ext .js,.jsx,.ts,.tsx src/ --cache --cache-location ../../../work/eslint/.eslintcache",
+    "lint:fix": "eslint --ext .js,.jsx,.ts,.tsx src/ --fix --cache --cache-location ../../../work/eslint/.eslintcache",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,scss,json,md}\" --cache --cache-location ../../../work/prettier/.prettiercache",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,css,scss,json,md}\" --cache --cache-location ../../../work/prettier/.prettiercache"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

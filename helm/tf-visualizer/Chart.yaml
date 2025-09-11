@@ -1,0 +1,17 @@
+apiVersion: v2
+name: tf-visualizer
+description: A Helm chart for Terraform Infrastructure Visualizer
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - terraform
+  - visualization
+  - infrastructure
+maintainers:
+  - name: DevOps Team
+    email: devops@example.com
+home: https://github.com/your-org/tf-visualizer
+sources:
+  - https://github.com/your-org/tf-visualizer
+dependencies: []

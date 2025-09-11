@@ -1,0 +1,102 @@
+# Pre-commit hooks for code quality and formatting
+# See https://pre-commit.com for more information
+
+repos:
+  # General file fixes
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: end-of-file-fixer
+        name: Fix End of Files
+        description: Ensures files end with a newline
+      - id: trailing-whitespace
+        name: Trim Trailing Whitespace
+        description: Trims trailing whitespace from files
+      - id: mixed-line-ending
+        name: Fix Mixed Line Endings
+        args: ['--fix=lf']
+        description: Ensures consistent line endings (LF)
+      - id: check-yaml
+        name: Check YAML
+        description: Validates YAML file syntax
+        exclude: '^helm/.*\.yaml$'
+      - id: check-json
+        name: Check JSON
+        description: Validates JSON file syntax
+      - id: check-toml
+        name: Check TOML
+        description: Validates TOML file syntax
+      - id: check-merge-conflict
+        name: Check Merge Conflicts
+        description: Prevents committing merge conflict markers
+      - id: check-added-large-files
+        name: Check Large Files
+        args: ['--maxkb=1000']
+        description: Prevents large files from being committed
+      - id: detect-private-key
+        name: Detect Private Keys
+        description: Prevents private keys from being committed
+
+  # Python specific hooks
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.14
+    hooks:
+      - id: ruff
+        name: Ruff Linter
+        args: ['--fix']
+        description: Fast Python linter with autofix
+      - id: ruff-format
+        name: Ruff Formatter
+        description: Fast Python formatter
+
+  # Additional Python checks
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        name: MyPy Type Checker
+        args: ['--ignore-missing-imports', '--check-untyped-defs']
+        files: ^(backend|tests)/.*\.py$
+        additional_dependencies: ['types-flask', 'types-requests']
+        description: Static type checker for Python
+
+# Configuration
+default_language_version:
+  python: python3.12
+
+# Run hooks on all files by default
+files: ''
+
+# Exclude directories
+exclude: |
+  (?x)^(
+    \.venv/|
+    venv/|
+    \.git/|
+    \.mypy_cache/|
+    \.pytest_cache/|
+    \.ruff_cache/|
+    __pycache__/|
+    node_modules/|
+    build/|
+    dist/|
+    \.terraform/|
+    terraform/\.terraform/|
+    work/|
+    apps/work/|
+    apps/[^/]+/venv/|
+    apps/[^/]+/\.venv/|
+    apps/[^/]+/work/|
+    apps/[^/]+/node_modules/|
+    apps/[^/]+/build/|
+    apps/[^/]+/dist/|
+    apps/[^/]+/\.mypy_cache/|
+    apps/[^/]+/\.pytest_cache/|
+    apps/[^/]+/\.ruff_cache/|
+    apps/[^/]+/__pycache__/|
+    \.coverage|
+    htmlcov/|
+    \.eggs/|
+    \.egg-info/|
+    .*\.egg
+  )
