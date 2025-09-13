@@ -2,7 +2,8 @@
 
 .PHONY: help all test build deploy clean
 .PHONY: app-help app-all app-test app-build app-deploy app-clean
-.PHONY: tf-help tf-init tf-plan tf-apply tf-destroy
+.PHONY: tf-help tf-init tf-plan tf-apply tf-destroy tf-destroy-confirm tf-output
+.PHONY: aws-auth aws-auth-check aws-auth-test
 
 # Default target - show available commands
 .DEFAULT_GOAL := help
@@ -38,7 +39,14 @@ help:
 	@echo "  make tf-init         - Initialize Terraform"
 	@echo "  make tf-plan         - Create Terraform plan"
 	@echo "  make tf-apply        - Apply Terraform changes"
-	@echo "  make tf-destroy      - Destroy infrastructure"
+	@echo "  make tf-destroy      - Destroy infrastructure (auto-approve)"
+	@echo "  make tf-destroy-confirm - Destroy infrastructure (with confirmation)"
+	@echo "  make tf-output       - Show Terraform outputs"
+	@echo ""
+	@echo "AWS Authentication Commands:"
+	@echo "  make aws-auth        - Interactive AWS authentication helper"
+	@echo "  make aws-auth-check  - Quick authentication status check"
+	@echo "  make aws-auth-test   - Test AWS permissions"
 	@echo ""
 	@echo "Quick Start:"
 	@echo "  make app-help        # See all app-specific commands"
@@ -105,19 +113,31 @@ frontend-dev:
 # Terraform targets
 tf-init:
 	@echo "Initializing Terraform..."
-	@$(MAKE) -C $(APP_DIR) tf-init
+	@cd $(TF_DIR) && terraform init
 
 tf-plan:
 	@echo "Creating Terraform plan..."
-	@$(MAKE) -C $(APP_DIR) tf-plan
+	@cd $(TF_DIR) && terraform workspace select default 2>/dev/null || true
+	@cd $(TF_DIR) && terraform plan
 
 tf-apply:
 	@echo "Applying Terraform changes..."
-	@$(MAKE) -C $(APP_DIR) tf-apply
+	@cd $(TF_DIR) && terraform workspace select default 2>/dev/null || true
+	@cd $(TF_DIR) && terraform apply
 
 tf-destroy:
 	@echo "Destroying Terraform infrastructure..."
-	@$(MAKE) -C $(APP_DIR) tf-destroy
+	@cd $(TF_DIR) && terraform workspace select default 2>/dev/null || true
+	@cd $(TF_DIR) && terraform destroy -auto-approve
+
+tf-destroy-confirm:
+	@echo "Destroying Terraform infrastructure (with confirmation)..."
+	@cd $(TF_DIR) && terraform workspace select default 2>/dev/null || true
+	@cd $(TF_DIR) && terraform destroy
+
+tf-output:
+	@cd $(TF_DIR) && terraform workspace select default 2>/dev/null || true
+	@cd $(TF_DIR) && terraform output
 
 # Docker shortcuts
 up:
@@ -150,3 +170,16 @@ ci-build:
 
 ci-deploy:
 	@$(MAKE) -C $(APP_DIR) ci-deploy
+
+# AWS Authentication targets
+aws-auth:
+	@echo "Starting AWS Authentication Helper..."
+	@./scripts/aws-auth.sh
+
+aws-auth-check:
+	@echo "Checking AWS authentication status..."
+	@./scripts/aws-auth.sh quick
+
+aws-auth-test:
+	@echo "Testing AWS permissions..."
+	@./scripts/aws-auth.sh test

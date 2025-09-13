@@ -146,9 +146,9 @@ type-check:
 test:
 	@echo "Running tests..."
 	@if [ -d "$(VENV)" ]; then \
-		$(VENV_PYTHON) -m pytest tests/ -v --cov=backend --cov-report=term-missing; \
+		$(VENV_PYTHON) -m pytest; \
 	else \
-		pytest tests/ -v --cov=backend --cov-report=term-missing; \
+		pytest; \
 	fi
 
 # Clean temporary files

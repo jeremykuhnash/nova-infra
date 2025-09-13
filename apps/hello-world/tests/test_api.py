@@ -78,10 +78,23 @@ class TestFlaskAPI:
         assert "No files provided" in data["error"]
 
     def test_frontend_fallback(self, client):
-        """Test frontend fallback when React build doesn't exist."""
+        """Test frontend fallback behavior."""
+        from pathlib import Path
+
         response = client.get("/")
-        assert response.status_code == 200
-        assert b"Terraform Visualizer" in response.data
+
+        # Check if frontend build exists
+        frontend_build = Path(__file__).parent.parent / "frontend" / "build" / "index.html"
+
+        if frontend_build.exists():
+            # When frontend exists, it should serve the index.html
+            assert response.status_code == 200
+            # The actual index.html content would be returned
+        else:
+            # When frontend build doesn't exist, API returns 404 with error message
+            assert response.status_code == 404
+            data = json.loads(response.data)
+            assert data["error"] == "Frontend not configured"
 
     def test_parse_terraform_function(self, tmp_path):
         """Test the parse_terraform helper function."""

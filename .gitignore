@@ -44,6 +44,7 @@ terraform.rc
 /node_modules/
 
 # Progress Markers
+examples/
 BACKLOG.*
 PLAN.md
 Deployment_Engineer*

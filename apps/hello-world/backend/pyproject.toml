@@ -16,7 +16,13 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
-cache-dir = "../../../work/ruff"
+cache-dir = "../work/ruff"
 
 [tool.mypy]
-cache_dir = "../../../work/mypy"
+cache_dir = "../work/mypy"
+
+[tool.pytest.ini_options]
+cache_dir = "../work/pytest"
+
+[tool.coverage.run]
+data_file = "../work/coverage/.coverage"
