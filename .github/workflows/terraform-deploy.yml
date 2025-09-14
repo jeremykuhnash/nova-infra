@@ -24,6 +24,7 @@ on:
 
 env:
   TERRAFORM_VERSION: '1.6.0'
+  AWS_REGION: us-east-1
 
 jobs:
   terraform:
@@ -50,7 +51,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
+        aws-region: ${{ env.AWS_REGION }}
 
     - name: Get AWS Account Info
       id: aws_info
@@ -61,14 +62,21 @@ jobs:
 
     - name: Initialize Terraform
       run: |
+        # Use default bucket name if secret not set
+        STATE_BUCKET="${{ secrets.TF_STATE_BUCKET }}"
+        if [ -z "$STATE_BUCKET" ]; then
+          STATE_BUCKET="nova-infra-terraform-state-${{ env.AWS_REGION }}"
+          echo "Using default state bucket: $STATE_BUCKET"
+        fi
+
         echo "🏗️ Initializing Terraform with backend:"
-        echo "   Bucket: ${{ secrets.TF_STATE_BUCKET }}"
-        echo "   Region: ${{ secrets.AWS_REGION }}"
+        echo "   Bucket: ${STATE_BUCKET}"
+        echo "   Region: ${{ env.AWS_REGION }}"
 
         terraform init \
-          -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+          -backend-config="bucket=${STATE_BUCKET}" \
           -backend-config="key=terraform.tfstate" \
-          -backend-config="region=${{ secrets.AWS_REGION }}" \
+          -backend-config="region=${{ env.AWS_REGION }}" \
           -backend-config="dynamodb_table=nova-infra-terraform-lock" \
           -backend-config="encrypt=true"
       working-directory: ./terraform
@@ -129,7 +137,7 @@ jobs:
       run: |
         echo "☸️ Updating kubeconfig for EKS cluster..."
         aws eks update-kubeconfig \
-          --region ${{ secrets.AWS_REGION }} \
+          --region ${{ env.AWS_REGION }} \
           --name ${{ steps.outputs.outputs.eks_cluster }}
 
         echo "Testing connection to cluster..."
@@ -144,7 +152,7 @@ jobs:
         echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
         echo "**Action:** ${{ github.event.inputs.action }}" >> $GITHUB_STEP_SUMMARY
         echo "**AWS Account:** ${{ steps.aws_info.outputs.account_id }}" >> $GITHUB_STEP_SUMMARY
-        echo "**Region:** ${{ secrets.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Region:** ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
 
         if [ "${{ github.event.inputs.action }}" == "apply" ] && [ -f ./terraform/outputs.json ]; then

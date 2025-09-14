@@ -56,4 +56,5 @@ Thumbs.db
 *.tfstate.*
 .terraform/
 .terraform.lock.hcl
+terraform.tfstate.d/
 tfplan

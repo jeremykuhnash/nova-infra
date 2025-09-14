@@ -17,7 +17,6 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  AWS_ACCOUNT_ID: 803442506948
   ECR_REPOSITORY: nova-infra-production
 
 jobs:

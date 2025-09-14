@@ -3,6 +3,11 @@
 scripts/*
 .claude
 
+# Python tool caches
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
 # .tfstate files
 *.tfstate
 *.tfstate.*
