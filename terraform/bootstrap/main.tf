@@ -29,8 +29,8 @@ data "aws_region" "current" {}
 
 # Generate unique bucket name using account ID and region
 locals {
-  bucket_name     = "${var.prefix}-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.name}-tfstate"
-  dynamodb_table  = "${var.prefix}-terraform-lock"
+  bucket_name    = "${var.prefix}-${data.aws_caller_identity.current.account_id}-${data.aws_region.current.name}-tfstate"
+  dynamodb_table = "${var.prefix}-terraform-lock"
 }
 
 # S3 bucket for Terraform state

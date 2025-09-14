@@ -26,11 +26,11 @@ module "vpc" {
 
   project_name         = var.project_name
   environment          = var.environment
-  vpc_cidr            = var.vpc_cidr
+  vpc_cidr             = var.vpc_cidr
   availability_zones   = slice(data.aws_availability_zones.available.names, 0, 2)
   private_subnet_cidrs = var.private_subnet_cidrs
   public_subnet_cidrs  = var.public_subnet_cidrs
-  tags                = var.tags
+  tags                 = var.tags
 }
 
 # ECR Module
@@ -46,18 +46,18 @@ module "ecr" {
 module "eks" {
   source = "./modules/eks"
 
-  project_name               = var.project_name
-  environment                = var.environment
-  eks_cluster_version        = var.eks_cluster_version
-  vpc_id                     = module.vpc.vpc_id
-  private_subnet_ids         = module.vpc.private_subnet_ids
-  node_group_instance_types  = var.node_group_instance_types
-  node_group_min_size        = var.node_group_min_size
-  node_group_max_size        = var.node_group_max_size
-  node_group_desired_size    = var.node_group_desired_size
-  enable_cluster_autoscaler  = var.enable_cluster_autoscaler
-  enable_metrics_server      = var.enable_metrics_server
-  tags                       = var.tags
+  project_name              = var.project_name
+  environment               = var.environment
+  eks_cluster_version       = var.eks_cluster_version
+  vpc_id                    = module.vpc.vpc_id
+  private_subnet_ids        = module.vpc.private_subnet_ids
+  node_group_instance_types = var.node_group_instance_types
+  node_group_min_size       = var.node_group_min_size
+  node_group_max_size       = var.node_group_max_size
+  node_group_desired_size   = var.node_group_desired_size
+  enable_cluster_autoscaler = var.enable_cluster_autoscaler
+  enable_metrics_server     = var.enable_metrics_server
+  tags                      = var.tags
 }
 
 # Configure kubectl and helm providers

@@ -312,7 +312,7 @@ deploy-local: test docker-build docker-run
 	@echo "Local deployment completed!"
 
 # CI/CD targets for GitHub Actions
-ci-test: venv install format lint type-check test
+ci-test: venv install frontend-build format lint type-check test
 	@echo "CI tests completed!"
 
 ci-build: ci-test docker-build
