@@ -19,7 +19,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPOSITORY: nova-infra-production  # This matches our created ECR repository
+  ECR_REPOSITORY: nova-infra  # Simplified ECR repository name
 
 jobs:
   test:
@@ -142,7 +142,7 @@ jobs:
 
     - name: Update kubeconfig
       run: |
-        aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name nova-infra-production
+        aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name nova-infra
 
     - name: Install Helm
       uses: azure/setup-helm@v3

@@ -45,7 +45,7 @@ terraform.rc
 
 # Top-level Node.js files (not needed for application)
 /package.json
-/package-lock.json
+# /package-lock.json  # Needed for npm ci in Docker builds
 /node_modules/
 
 # Progress Markers
@@ -54,5 +54,5 @@ work/
 BACKLOG.*
 PLAN.md
 Deployment_Engineer*
-package*.json
+# package*.json  # Needed for npm ci in Docker builds
 IMPLEMENTATION_PLAN.md

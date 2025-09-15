@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "main" {
-  name                 = "${var.project_name}-${var.environment}"
+  name                 = var.project_name
   image_tag_mutability = var.image_tag_mutability
 
   image_scanning_configuration {
@@ -13,7 +13,7 @@ resource "aws_ecr_repository" "main" {
   tags = merge(
     var.tags,
     {
-      Name = "${var.project_name}-${var.environment}-ecr"
+      Name = "${var.project_name}-ecr"
     }
   )
 }
