@@ -1,4 +1,4 @@
-# NovaFuse Completed Work
+# Completed Work
 
 ## 2025
 

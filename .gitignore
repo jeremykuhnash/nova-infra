@@ -50,6 +50,7 @@ terraform.rc
 
 # Progress Markers
 examples/
+work/
 BACKLOG.*
 PLAN.md
 Deployment_Engineer*
