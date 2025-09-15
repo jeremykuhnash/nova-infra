@@ -55,7 +55,7 @@ jobs:
         # Use default bucket name if secret not set
         STATE_BUCKET="${{ secrets.TF_STATE_BUCKET }}"
         if [ -z "$STATE_BUCKET" ]; then
-          STATE_BUCKET="nova-infra-terraform-state-${{ env.AWS_REGION }}"
+          STATE_BUCKET="nova-infra-803442506948-us-east-1-tfstate"
           echo "Using default state bucket: $STATE_BUCKET"
         fi
 

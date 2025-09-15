@@ -111,6 +111,10 @@ frontend-dev:
 	@$(MAKE) -C $(APP_DIR) frontend-dev
 
 # Terraform targets
+tf-init-backend:
+	@echo "Initializing Terraform backend..."
+	@cd $(TF_DIR) && ./init-backend.sh
+
 tf-init:
 	@echo "Initializing Terraform..."
 	@cd $(TF_DIR) && terraform init
