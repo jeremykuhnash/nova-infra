@@ -91,17 +91,17 @@ resource "aws_iam_role" "node_group" {
   tags = var.tags
 }
 
-resource "aws_iam_role_policy_attachment" "node_group_AmazonEKSWorkerNodePolicy" {
+resource "aws_iam_role_policy_attachment" "node_group_worker_node_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.node_group.name
 }
 
-resource "aws_iam_role_policy_attachment" "node_group_AmazonEKS_CNI_Policy" {
+resource "aws_iam_role_policy_attachment" "node_group_cni_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   role       = aws_iam_role.node_group.name
 }
 
-resource "aws_iam_role_policy_attachment" "node_group_AmazonEC2ContainerRegistryReadOnly" {
+resource "aws_iam_role_policy_attachment" "node_group_container_registry_read_only" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.node_group.name
 }
@@ -127,9 +127,9 @@ resource "aws_eks_node_group" "main" {
   disk_size      = var.node_group_disk_size
 
   depends_on = [
-    aws_iam_role_policy_attachment.node_group_AmazonEKSWorkerNodePolicy,
-    aws_iam_role_policy_attachment.node_group_AmazonEKS_CNI_Policy,
-    aws_iam_role_policy_attachment.node_group_AmazonEC2ContainerRegistryReadOnly,
+    aws_iam_role_policy_attachment.node_group_worker_node_policy,
+    aws_iam_role_policy_attachment.node_group_cni_policy,
+    aws_iam_role_policy_attachment.node_group_container_registry_read_only,
   ]
 
   tags = merge(

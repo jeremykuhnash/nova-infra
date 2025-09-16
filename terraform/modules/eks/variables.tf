@@ -49,18 +49,6 @@ variable "node_group_disk_size" {
   default     = 20
 }
 
-variable "enable_cluster_autoscaler" {
-  description = "Enable cluster autoscaler"
-  type        = bool
-  default     = true
-}
-
-variable "enable_metrics_server" {
-  description = "Enable metrics server"
-  type        = bool
-  default     = true
-}
-
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

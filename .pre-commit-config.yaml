@@ -60,6 +60,26 @@ repos:
         additional_dependencies: ['types-flask', 'types-requests']
         description: Static type checker for Python
 
+  # Terraform hooks
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.86.0
+    hooks:
+      - id: terraform_fmt
+        name: Terraform Format
+        description: Rewrites Terraform files to canonical format
+      - id: terraform_validate
+        name: Terraform Validate
+        description: Validates Terraform files
+      - id: terraform_tflint
+        name: Terraform TFLint
+        description: Linter for Terraform files
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+      # - id: terraform_tfsec
+      #   name: Terraform Security Scan
+      #   description: Static analysis of Terraform for security issues
+      #   Note: Disabled as tfsec warnings are expected for dev environment
+
 # Configuration
 default_language_version:
   python: python3.12

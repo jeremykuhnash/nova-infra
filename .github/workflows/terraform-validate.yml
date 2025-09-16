@@ -13,7 +13,7 @@ on:
       - '.github/workflows/terraform-*.yml'
 
 env:
-  TERRAFORM_VERSION: '1.9.0'
+  TERRAFORM_VERSION: 'latest'
   AWS_REGION: us-east-1
 
 jobs:

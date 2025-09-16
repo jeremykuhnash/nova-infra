@@ -54,8 +54,6 @@ module "eks" {
   node_group_min_size       = var.node_group_min_size
   node_group_max_size       = var.node_group_max_size
   node_group_desired_size   = var.node_group_desired_size
-  enable_cluster_autoscaler = var.enable_cluster_autoscaler
-  enable_metrics_server     = var.enable_metrics_server
   tags                      = var.tags
 }
 

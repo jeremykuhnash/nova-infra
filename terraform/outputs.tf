@@ -37,3 +37,8 @@ output "deploy_command" {
   description = "Command to deploy the application"
   value       = "helm upgrade --install tf-visualizer ./helm/tf-visualizer --set image.repository=${module.ecr.repository_url}"
 }
+
+output "aws_account_id" {
+  description = "The AWS Account ID"
+  value       = data.aws_caller_identity.current.account_id
+}

@@ -22,12 +22,6 @@ variable "vpc_cidr" {
   default     = "10.0.0.0/16"
 }
 
-variable "availability_zones" {
-  description = "Availability zones for the VPC"
-  type        = list(string)
-  default     = ["us-east-1a", "us-east-1b"]
-}
-
 variable "private_subnet_cidrs" {
   description = "CIDR blocks for private subnets"
   type        = list(string)
@@ -68,18 +62,6 @@ variable "node_group_desired_size" {
   description = "Desired size of the node group"
   type        = number
   default     = 2
-}
-
-variable "enable_cluster_autoscaler" {
-  description = "Enable cluster autoscaler"
-  type        = bool
-  default     = true
-}
-
-variable "enable_metrics_server" {
-  description = "Enable metrics server"
-  type        = bool
-  default     = true
 }
 
 variable "tags" {

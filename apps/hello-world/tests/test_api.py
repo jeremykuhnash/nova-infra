@@ -94,7 +94,7 @@ class TestFlaskAPI:
             # When frontend build doesn't exist, API returns 404 with error message
             assert response.status_code == 404
             # Check if response is JSON before trying to parse
-            if response.content_type and 'application/json' in response.content_type:
+            if response.content_type and "application/json" in response.content_type:
                 data = json.loads(response.data)
                 assert data["error"] == "Frontend not configured"
             else:

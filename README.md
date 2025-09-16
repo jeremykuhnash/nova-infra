@@ -44,7 +44,7 @@ GitHub → GitHub Actions → AWS ECR
 - kubectl >= 1.28
 - Helm >= 3.0
 - AWS CLI v2
-- Python 3.11+ (development)
+- Python 3.12+ (development)
 - Node.js 18+ (frontend)
 
 ## Quick Start
@@ -131,7 +131,7 @@ terraform destroy -auto-approve
 ### Workflows
 
 | Workflow | Trigger | Purpose |
-|----------|---------|---------||
+|----------|---------|---------|
 | `build-deploy.yml` | Push to main/develop | Test, build, deploy |
 | `terraform.yml` | Push to main, manual | Infrastructure management |
 | `ecr-push.yml` | Push to main/develop | Docker image management |
