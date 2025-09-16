@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  ci-tools:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci
+    image: nova-infra-ci:latest
+    container_name: nova-ci-tools
+    volumes:
+      - .:/workspace
+      - ~/.aws:/root/.aws:ro  # For AWS credentials
+      - ~/.kube:/root/.kube:ro  # For kubectl config
+    environment:
+      - AWS_PROFILE=${AWS_PROFILE:-default}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+    working_dir: /workspace
+    tty: true
+    stdin_open: true
+    command: /bin/bash
+
+  # Run all validations
+  validate-all:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci
+    image: nova-infra-ci:latest
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    command: |
+      bash -c "
+        echo '🔍 Running all validations...'
+        echo ''
+        echo '📋 Pre-commit checks:'
+        pre-commit run --all-files
+        echo ''
+        echo '🔧 Terraform validation:'
+        cd terraform && terraform init -backend=false && terraform validate && tflint --init && tflint
+        echo ''
+        echo '🐍 Python tests:'
+        cd /workspace/apps/hello-world && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt && pytest tests --cov=backend
+        echo ''
+        echo '✅ All validations complete!'
+      "
+
+  # Terraform specific tools
+  terraform-tools:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci
+    image: nova-infra-ci:latest
+    volumes:
+      - .:/workspace
+      - ~/.aws:/root/.aws:ro
+    environment:
+      - AWS_PROFILE=${AWS_PROFILE:-default}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+    working_dir: /workspace/terraform
+    command: /bin/bash
+
+  # Python development environment
+  python-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.ci
+    image: nova-infra-ci:latest
+    volumes:
+      - .:/workspace
+    working_dir: /workspace/apps/hello-world
+    command: /bin/bash

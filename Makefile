@@ -48,6 +48,13 @@ help:
 	@echo "  make aws-auth-check  - Quick authentication status check"
 	@echo "  make aws-auth-test   - Test AWS permissions"
 	@echo ""
+	@echo "CI/CD Container Commands:"
+	@echo "  make ci-build        - Build CI/CD Docker image with all tools"
+	@echo "  make ci-shell        - Start interactive CI container"
+	@echo "  make ci-validate     - Run all validations in CI container"
+	@echo "  make ci-terraform    - Start Terraform tools container"
+	@echo "  make ci-python       - Start Python development container"
+	@echo ""
 	@echo "Quick Start:"
 	@echo "  make app-help        # See all app-specific commands"
 	@echo "  make all            # Run all quality checks"
@@ -187,3 +194,24 @@ aws-auth-check:
 aws-auth-test:
 	@echo "Testing AWS permissions..."
 	@./scripts/aws-auth.sh test
+
+# CI/CD Container targets
+ci-build:
+	@echo "Building CI/CD Docker image with all tools..."
+	@docker build -f Dockerfile.ci -t nova-infra-ci:latest .
+
+ci-shell:
+	@echo "Starting CI/CD container with all tools..."
+	@docker-compose -f docker-compose.ci.yml run --rm ci-tools
+
+ci-validate:
+	@echo "Running all validations in CI container..."
+	@docker-compose -f docker-compose.ci.yml run --rm validate-all
+
+ci-terraform:
+	@echo "Starting Terraform tools container..."
+	@docker-compose -f docker-compose.ci.yml run --rm terraform-tools
+
+ci-python:
+	@echo "Starting Python development container..."
+	@docker-compose -f docker-compose.ci.yml run --rm python-dev
