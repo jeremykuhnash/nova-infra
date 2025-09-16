@@ -101,11 +101,11 @@ const App: React.FC = () => {
     const g = new dagre.graphlib.Graph();
     g.setGraph({
       rankdir: layoutDirection, // Use selected layout direction
-      nodesep: 80,   // Horizontal space between nodes
-      ranksep: 120,  // Vertical space between ranks
+      nodesep: 80, // Horizontal space between nodes
+      ranksep: 120, // Vertical space between ranks
       marginx: 50,
       marginy: 50,
-      edgesep: 20,   // Space between edges
+      edgesep: 20, // Space between edges
     });
     g.setDefaultEdgeLabel(() => ({}));
 
@@ -141,7 +141,7 @@ const App: React.FC = () => {
     setMetadata(data.metadata);
 
     // Filter entities based on visible categories
-    const filteredEntities = data.entities.filter(entity =>
+    const filteredEntities = data.entities.filter((entity) =>
       visibleCategories.has(entity.category)
     );
 
@@ -160,10 +160,11 @@ const App: React.FC = () => {
 
       // For outputs, add the value
       if (entity.category === 'output' && entity.attributes) {
-        const value = entity.attributes.value ||
-                     entity.attributes.default ||
-                     entity.attributes.description ||
-                     '';
+        const value =
+          entity.attributes.value ||
+          entity.attributes.default ||
+          entity.attributes.description ||
+          '';
         if (value) {
           const cleanValue = String(value)
             .replace(/\${/g, '')
@@ -192,7 +193,7 @@ const App: React.FC = () => {
 
     // Apply dagre layout to position nodes nicely
     const filteredRelationships = data.relationships.filter(
-      rel => nodeMap[rel.source] && nodeMap[rel.target]
+      (rel) => nodeMap[rel.source] && nodeMap[rel.target]
     );
     applyDagreLayout(nodeMap, filteredRelationships);
 
@@ -349,7 +350,10 @@ const App: React.FC = () => {
           <span>Files: {metadata.total_files || 0}</span>
           <span>Entities: {metadata.total_entities || 0}</span>
           <span>Relationships: {metadata.total_relationships || 0}</span>
-          <span>Visible: {visibleCategories.size > 0 ? Array.from(visibleCategories).join(', ') : 'none'}</span>
+          <span>
+            Visible:{' '}
+            {visibleCategories.size > 0 ? Array.from(visibleCategories).join(', ') : 'none'}
+          </span>
         </div>
       )}
 

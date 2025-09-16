@@ -277,11 +277,11 @@ security-scan:
 # Pre-commit targets
 pre-commit-install:
 	@echo "Installing pre-commit hooks..."
-	@pre-commit install
+	@cd $(APP_DIR) && poetry run pre-commit install
 
 pre-commit-run:
 	@echo "Running pre-commit hooks..."
-	@pre-commit run --all-files
+	@cd $(APP_DIR) && poetry run pre-commit run --all-files
 
 # Code quality targets
 format:

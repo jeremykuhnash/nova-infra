@@ -48,6 +48,7 @@ terraform apply
 ## Backend Configuration
 
 ### Production (S3 Backend)
+
 - **Bucket**: `nova-infra-terraform-state`
 - **Region**: `us-east-1`
 - **State Locking**: `nova-infra-terraform-lock` (DynamoDB)
@@ -56,7 +57,9 @@ terraform apply
 The `init-backend.sh` script automatically creates these resources with proper security settings.
 
 ### Local Development
+
 For testing without S3 backend:
+
 ```bash
 terraform init -backend=false
 ```
@@ -64,6 +67,7 @@ terraform init -backend=false
 ## Infrastructure Components
 
 ### Networking Module
+
 - VPC with CIDR 10.0.0.0/16
 - 2 Public subnets (10.0.101.0/24, 10.0.102.0/24)
 - 2 Private subnets (10.0.1.0/24, 10.0.2.0/24)
@@ -71,6 +75,7 @@ terraform init -backend=false
 - Security groups with least privilege
 
 ### EKS Module
+
 - EKS cluster version 1.28
 - Managed node groups with t3.medium instances
 - Auto-scaling (min: 1, max: 3, desired: 2)
@@ -78,6 +83,7 @@ terraform init -backend=false
 - CloudWatch logging enabled
 
 ### ECR Module
+
 - Container registry for Docker images
 - Lifecycle policies for image management
 - Vulnerability scanning enabled
@@ -86,17 +92,18 @@ terraform init -backend=false
 
 Key variables in `variables.tf`:
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `project_name` | `tf-visualizer` | Project name prefix |
-| `environment` | `dev` | Environment (dev/staging/prod) |
-| `aws_region` | `us-east-1` | AWS deployment region |
-| `eks_cluster_version` | `1.28` | Kubernetes version |
-| `node_group_instance_types` | `["t3.medium"]` | EC2 instance types |
+| Variable                    | Default         | Description                    |
+| --------------------------- | --------------- | ------------------------------ |
+| `project_name`              | `tf-visualizer` | Project name prefix            |
+| `environment`               | `dev`           | Environment (dev/staging/prod) |
+| `aws_region`                | `us-east-1`     | AWS deployment region          |
+| `eks_cluster_version`       | `1.28`          | Kubernetes version             |
+| `node_group_instance_types` | `["t3.medium"]` | EC2 instance types             |
 
 ## Access EKS Cluster
 
 After deployment:
+
 ```bash
 # Configure kubectl
 aws eks update-kubeconfig --region us-east-1 --name tf-visualizer-dev
@@ -108,6 +115,7 @@ kubectl get nodes
 ## Outputs
 
 View infrastructure outputs:
+
 ```bash
 terraform output
 
@@ -137,11 +145,13 @@ terraform destroy
 ## Troubleshooting
 
 ### State Lock Issues
+
 ```bash
 terraform force-unlock <LOCK_ID>
 ```
 
 ### EKS Access Issues
+
 ```bash
 aws eks update-kubeconfig --region us-east-1 --name <cluster-name>
 ```

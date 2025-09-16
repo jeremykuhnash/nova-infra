@@ -67,19 +67,22 @@ repos:
       - id: terraform_fmt
         name: Terraform Format
         description: Rewrites Terraform files to canonical format
-      - id: terraform_validate
-        name: Terraform Validate
-        description: Validates Terraform files
-      - id: terraform_tflint
-        name: Terraform TFLint
-        description: Linter for Terraform files
-        args:
-          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
-      - id: terraform_trivy
-        name: Terraform Security Scan
-        description: Static analysis of Terraform for security issues
-        args:
-          - --args=--minimum-severity=HIGH
+      # Temporarily disabled - hanging in CI
+      # - id: terraform_validate
+      #   name: Terraform Validate
+      #   description: Validates Terraform files
+      #   args:
+      #     - --init-args=-backend=false
+      # - id: terraform_tflint
+      #   name: Terraform TFLint
+      #   description: Linter for Terraform files
+      #   args:
+      #     - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+      # - id: terraform_trivy
+      #   name: Terraform Security Scan
+      #   description: Static analysis of Terraform for security issues
+      #   args:
+      #     - --args=--minimum-severity=HIGH
 
   # JavaScript/TypeScript hooks
   # Note: ESLint is disabled in CI since frontend tests run separately

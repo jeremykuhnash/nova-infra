@@ -36,6 +36,7 @@ terraform init
 ## What Gets Created
 
 1. **S3 Bucket**: `nova-infra-{ACCOUNT_ID}-{REGION}-tfstate`
+
    - Versioning enabled for state history
    - Server-side encryption (AES256)
    - All public access blocked

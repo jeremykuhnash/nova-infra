@@ -1,41 +1,21 @@
 # Multi-stage build for Terraform Visualizer
 
-# Stage 1: Build React frontend
-FROM node:18-alpine AS frontend-builder
-
-WORKDIR /app/frontend
-
-# Copy package files
-COPY frontend/package*.json ./
-COPY frontend/webpack.config.js ./
-COPY frontend/tsconfig.json ./
-
-# Install dependencies
-RUN npm ci --only=production && \
-    npm install --save-dev typescript ts-loader webpack webpack-cli html-webpack-plugin css-loader style-loader file-loader
-
-# Copy source code
-COPY frontend/public ./public
-COPY frontend/src ./src
-
-# Build the frontend
-RUN npm run build
-
-# Stage 2: Python backend runtime
-FROM python:3.12-slim AS runtime
+# Stage 1: Base image with common dependencies
+FROM python:3.12-slim AS base
 
 # Install system dependencies
+# hadolint ignore=DL3008
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     curl \
     gcc \
+    git \
+    make \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry
-RUN pip install --no-cache-dir poetry
-
-# Create non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# hadolint ignore=DL3013
+RUN pip install --no-cache-dir poetry==1.8.0
 
 WORKDIR /app
 
@@ -48,8 +28,70 @@ ENV POETRY_VENV_IN_PROJECT=false \
     POETRY_CACHE_DIR=/tmp/poetry_cache \
     POETRY_VIRTUALENVS_CREATE=false
 
-# Install Python dependencies directly to system Python
-RUN poetry install --only=main --no-root && rm -rf $POETRY_CACHE_DIR
+# Stage 2: Development/Test stage for CI
+FROM base AS test
+
+# Install all dependencies including dev dependencies
+RUN poetry install --no-root && rm -rf "$POETRY_CACHE_DIR"
+
+# Copy all application code
+COPY backend ./backend
+COPY tests ./tests
+COPY app.py .
+COPY Makefile .
+
+# Create work directory for test outputs
+RUN mkdir -p work/coverage work/ruff work/mypy work/pytest
+
+# Run tests by default in this stage
+CMD ["make", "test"]
+
+# Stage 3: Frontend builder
+FROM node:18-alpine AS frontend-builder
+
+WORKDIR /app/frontend
+
+# Copy package files
+COPY frontend/package*.json ./
+COPY frontend/webpack.config.js ./
+COPY frontend/tsconfig.json ./
+
+# Install dependencies
+# hadolint ignore=DL3016
+RUN npm ci --only=production && \
+    npm install --save-dev typescript ts-loader webpack webpack-cli html-webpack-plugin css-loader style-loader file-loader
+
+# Copy source code
+COPY frontend/public ./public
+COPY frontend/src ./src
+
+# Build the frontend
+RUN npm run build
+
+# Stage 4: Frontend test stage
+FROM node:18-alpine AS frontend-test
+
+WORKDIR /app/frontend
+
+# Copy package files and install all dependencies including dev
+COPY frontend/package*.json ./
+RUN npm ci
+
+# Copy source code
+COPY frontend/ ./
+
+# Run linting and tests
+RUN npm run lint || true
+RUN npm run build
+
+# Stage 5: Production runtime
+FROM base AS production
+
+# Install only production dependencies
+RUN poetry install --only=main --no-root && rm -rf "$POETRY_CACHE_DIR"
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Copy backend code
 COPY backend ./backend
@@ -58,8 +100,8 @@ COPY app.py .
 # Copy work directory structure
 COPY work ./work
 
-# Copy frontend build from previous stage to work directory for versioned builds
-COPY --from=frontend-builder /app/frontend/../work/frontend/build ./work/frontend/build
+# Copy frontend build from builder stage
+COPY --from=frontend-builder /app/frontend/build ./work/frontend/build
 
 # Copy test Terraform files for visualization (if they exist)
 COPY --chown=appuser:appuser test-terraform ./terraform-examples

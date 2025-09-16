@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   ci-tools:
@@ -9,8 +9,8 @@ services:
     container_name: nova-ci-tools
     volumes:
       - .:/workspace
-      - ~/.aws:/root/.aws:ro  # For AWS credentials
-      - ~/.kube:/root/.kube:ro  # For kubectl config
+      - ~/.aws:/root/.aws:ro # For AWS credentials
+      - ~/.kube:/root/.kube:ro # For kubectl config
     environment:
       - AWS_PROFILE=${AWS_PROFILE:-default}
       - AWS_REGION=${AWS_REGION:-us-east-1}
