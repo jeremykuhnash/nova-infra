@@ -90,10 +90,13 @@ jobs:
       - name: Run Python tests
         run: |
           # List available images after loading
-          docker images | grep nova-infra-ci
-          # Run with the main branch tag
+          docker images | grep nova-infra-ci || true
+          # Get the first available tag
+          IMAGE_TAG=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep nova-infra-ci | head -1)
+          echo "Using image: $IMAGE_TAG"
+          # Run tests
           docker run --rm -v ${{ github.workspace }}:/workspace \
-            nova-infra-ci:main \
+            $IMAGE_TAG \
             bash -c "
               cd /workspace/apps/tf-visualizer
               make all
@@ -101,8 +104,9 @@ jobs:
 
       - name: Run Frontend tests
         run: |
+          IMAGE_TAG=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep nova-infra-ci | head -1)
           docker run --rm -v ${{ github.workspace }}:/workspace \
-            nova-infra-ci:main \
+            $IMAGE_TAG \
             bash -c "
               cd /workspace/apps/tf-visualizer/frontend
               npm ci
@@ -139,10 +143,13 @@ jobs:
       - name: Run pre-commit
         run: |
           # List available images after loading
-          docker images | grep nova-infra-ci
-          # Run with the main branch tag
+          docker images | grep nova-infra-ci || true
+          # Get the first available tag
+          IMAGE_TAG=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep nova-infra-ci | head -1)
+          echo "Using image: $IMAGE_TAG"
+          # Run pre-commit checks
           docker run --rm -v ${{ github.workspace }}:/workspace \
-            nova-infra-ci:main \
+            $IMAGE_TAG \
             bash -c "
               cd /workspace
               git config --global --add safe.directory /workspace

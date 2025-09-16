@@ -3,7 +3,7 @@
 replicaCount: 2
 
 image:
-  repository: ""  # Will be set by terraform output or CI/CD
+  repository: "" # Will be set by terraform output or CI/CD
   pullPolicy: IfNotPresent
   tag: "latest"
 
@@ -26,13 +26,13 @@ podSecurityContext:
 securityContext:
   capabilities:
     drop:
-    - ALL
+      - ALL
   readOnlyRootFilesystem: false
   runAsNonRoot: true
   runAsUser: 1000
 
 service:
-  type: LoadBalancer
+  type: ClusterIP
   port: 80
   targetPort: 5000
   annotations: {}
@@ -73,15 +73,15 @@ tolerations: []
 affinity:
   podAntiAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
-    - weight: 100
-      podAffinityTerm:
-        labelSelector:
-          matchExpressions:
-          - key: app.kubernetes.io/name
-            operator: In
-            values:
-            - tf-visualizer
-        topologyKey: kubernetes.io/hostname
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - tf-visualizer
+          topologyKey: kubernetes.io/hostname
 
 env:
   - name: FLASK_ENV
@@ -126,16 +126,16 @@ readinessProbe:
 networkPolicy:
   enabled: false
   policyTypes:
-  - Ingress
-  - Egress
+    - Ingress
+    - Egress
   ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: tf-visualizer
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: tf-visualizer
   egress:
-  - to:
-    - podSelector: {}
+    - to:
+        - podSelector: {}
 
 # Pod Disruption Budget
 podDisruptionBudget:
