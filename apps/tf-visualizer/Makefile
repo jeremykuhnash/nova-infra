@@ -1,5 +1,5 @@
 .PHONY: all format lint test clean help
-.PHONY: docker-build docker-run docker-clean
+.PHONY: docker-build docker-build-test docker-test docker-run docker-clean
 .PHONY: frontend-build frontend-dev
 .PHONY: install dev
 
@@ -14,7 +14,7 @@ help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Dev:      install | all | dev | test"
-	@echo "Docker:   docker-build | docker-run"
+	@echo "Docker:   docker-build | docker-build-test | docker-test | docker-run"
 	@echo "Frontend: frontend-build | frontend-dev"
 
 check-poetry:
@@ -56,7 +56,16 @@ frontend-dev:
 	@cd $(FRONTEND_DIR) && npm start
 
 docker-build:
-	@docker build -t $(DOCKER_IMAGE) .
+	@echo "Building production image..."
+	@docker build --target production -t $(DOCKER_IMAGE) .
+
+docker-build-test:
+	@echo "Building test image..."
+	@docker build --target test -t $(DOCKER_IMAGE)-test .
+
+docker-test:
+	@echo "Running tests in Docker..."
+	@docker run --rm $(DOCKER_IMAGE)-test
 
 docker-run:
 	@docker run -p 5000:5000 $(DOCKER_IMAGE)

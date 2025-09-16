@@ -43,14 +43,9 @@ jobs:
         run: |
           cd apps/tf-visualizer
           docker build --target test -t tf-visualizer-test .
-          docker run --rm tf-visualizer-test
-
-      - name: Extract test coverage
-        run: |
-          cd apps/tf-visualizer
-          # Create a container from the test image to copy coverage files
-          docker create --name test-container tf-visualizer-test
-          docker cp test-container:/app/work/coverage ./coverage || true
+          # Run tests and extract coverage in one step
+          docker run --name test-container tf-visualizer-test
+          docker cp test-container:/app/work/coverage ./coverage
           docker rm test-container
 
       - name: Run Frontend Tests
@@ -62,9 +57,11 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
-          file: ./apps/tf-visualizer/coverage/coverage.xml
+          files: ./apps/tf-visualizer/coverage/coverage.xml
+          directory: ./apps/tf-visualizer
           flags: backend
           name: backend-coverage
+          fail_ci_if_error: false
 
   # Pre-commit checks
   pre-commit:
@@ -79,6 +76,11 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.12"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.7"
 
       - name: Install pre-commit
         run: pip install pre-commit

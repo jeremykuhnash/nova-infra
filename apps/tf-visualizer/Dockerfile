@@ -65,8 +65,8 @@ RUN npm ci --only=production && \
 COPY frontend/public ./public
 COPY frontend/src ./src
 
-# Build the frontend
-RUN npm run build
+# Build the frontend (outputs to ../work/frontend/build)
+RUN npm run build && ls -la ../work/frontend/build
 
 # Stage 4: Frontend test stage
 FROM node:18-alpine AS frontend-test
@@ -100,8 +100,8 @@ COPY app.py .
 # Copy work directory structure
 COPY work ./work
 
-# Copy frontend build from builder stage
-COPY --from=frontend-builder /app/frontend/build ./work/frontend/build
+# Copy frontend build from builder stage (from ../work/frontend/build)
+COPY --from=frontend-builder /app/work/frontend/build ./static
 
 # Copy test Terraform files for visualization (if they exist)
 COPY --chown=appuser:appuser test-terraform ./terraform-examples
