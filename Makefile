@@ -9,7 +9,7 @@
 .DEFAULT_GOAL := help
 
 # Application directory
-APP_DIR := apps/hello-world
+APP_DIR := apps/tf-visualizer
 
 # Terraform directory
 TF_DIR := terraform
@@ -27,7 +27,7 @@ help:
 	@echo "  make deploy          - Deploy infrastructure and applications"
 	@echo "  make clean           - Clean all build artifacts"
 	@echo ""
-	@echo "Application Commands (apps/hello-world):"
+	@echo "Application Commands (apps/tf-visualizer):"
 	@echo "  make app-help        - Show application-specific targets"
 	@echo "  make app-all         - Run all app checks and build"
 	@echo "  make app-test        - Run application tests"
@@ -176,7 +176,7 @@ docker-clean:
 ci-test:
 	@$(MAKE) -C $(APP_DIR) ci-test
 
-ci-build:
+ci-app-build:
 	@$(MAKE) -C $(APP_DIR) ci-build
 
 ci-deploy:

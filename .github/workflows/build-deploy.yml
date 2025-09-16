@@ -6,14 +6,14 @@ on:
       - main
       - develop
     paths:
-      - 'apps/hello-world/**'
+      - 'apps/tf-visualizer/**'
       - 'helm/tf-visualizer/**'
       - '.github/workflows/build-deploy.yml'
   pull_request:
     branches:
       - main
     paths:
-      - 'apps/hello-world/**'
+      - 'apps/tf-visualizer/**'
       - 'helm/tf-visualizer/**'
       - '.github/workflows/build-deploy.yml'
   workflow_dispatch:
@@ -47,14 +47,14 @@ jobs:
         python-version: '3.12'
 
     - name: Run CI tests using Makefile
-      working-directory: ./apps/hello-world
+      working-directory: ./apps/tf-visualizer
       run: |
         make ci-test
 
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
       with:
-        file: ./apps/hello-world/coverage.xml
+        file: ./apps/tf-visualizer/coverage.xml
         flags: backend
         name: backend-coverage
 
@@ -104,7 +104,7 @@ jobs:
 
     - name: Build and push Docker image
       id: build
-      working-directory: ./apps/hello-world
+      working-directory: ./apps/tf-visualizer
       run: |
         DOCKER_REGISTRY=${{ steps.login-ecr.outputs.registry }}
         DOCKER_IMAGE=${{ env.ECR_REPOSITORY }}

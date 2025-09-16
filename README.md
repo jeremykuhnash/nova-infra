@@ -12,7 +12,7 @@ Parses and visualizes Terraform configurations as interactive diagrams. Deployed
 - Application: Operational
 - CI/CD: GitHub Actions
 - Test Coverage: 97%
-- Security: Trivy scanning
+- Security: tfsec scanning
 - Monitoring: Health checks configured
 
 ## Features
@@ -53,7 +53,7 @@ GitHub → GitHub Actions → AWS ECR
 ```bash
 git clone https://github.com/jeremykuhnash/nova-infra.git
 cd nova-infra
-./setup.sh  # Installs AWS CLI, Terraform, GitHub CLI, kubectl
+./scripts/setup.sh  # Installs AWS CLI, Terraform, GitHub CLI, kubectl
 ```
 
 ### Step 2: Configure AWS
@@ -98,7 +98,7 @@ gh run watch  # Monitor deployment
 
 #### Option B: Manual Deploy
 ```bash
-cd ../apps/hello-world
+cd ../apps/tf-visualizer
 docker build -t tf-visualizer .
 
 aws ecr get-login-password --region us-east-1 | \
@@ -152,7 +152,7 @@ gh run watch                                   # Monitor
 
 ### Quality Gates
 - Test Coverage: 97% minimum
-- Security: Trivy scanning
+- Security: tfsec scanning
 - Validation: Terraform on PRs
 - Testing: Smoke tests post-deploy
 - Type Checking: mypy
@@ -319,6 +319,21 @@ postgresql:
   auth:
     database: tfviz
 ```
+
+## Development Tools
+
+### CI Container
+All tools pre-installed for consistency:
+
+```bash
+make ci-build      # Build container (first time)
+make ci-shell      # Interactive shell
+make ci-validate   # Run all checks
+make ci-terraform  # Terraform tools
+make ci-python     # Python dev env
+```
+
+Includes: Terraform, TFLint, Trivy, AWS CLI, kubectl, Helm, Python 3.12, Node.js 18, pre-commit hooks.
 
 ## Contributing
 

@@ -39,7 +39,7 @@ services:
         cd terraform && terraform init -backend=false && terraform validate && tflint --init && tflint
         echo ''
         echo '🐍 Python tests:'
-        cd /workspace/apps/hello-world && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt && pytest tests --cov=backend
+        cd /workspace/apps/tf-visualizer && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt && pytest tests --cov=backend
         echo ''
         echo '✅ All validations complete!'
       "
@@ -67,5 +67,5 @@ services:
     image: nova-infra-ci:latest
     volumes:
       - .:/workspace
-    working_dir: /workspace/apps/hello-world
+    working_dir: /workspace/apps/tf-visualizer
     command: /bin/bash

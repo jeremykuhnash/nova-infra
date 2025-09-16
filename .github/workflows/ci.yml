@@ -79,7 +79,7 @@ jobs:
             terraform validate
             tflint --init
             tflint --config=/workspace/.tflint.hcl
-            trivy config .
+            tfsec .
           "
 
   python-tests:
@@ -105,7 +105,7 @@ jobs:
         docker run --rm -v ${{ github.workspace }}:/workspace \
           ${{ needs.build-ci-image.outputs.image-tag }} \
           bash -c "
-            cd /workspace/apps/hello-world
+            cd /workspace/apps/tf-visualizer
             python -m venv venv
             source venv/bin/activate
             pip install -r requirements.txt
@@ -118,7 +118,7 @@ jobs:
     - name: Upload coverage
       uses: codecov/codecov-action@v3
       with:
-        file: ./apps/hello-world/coverage.xml
+        file: ./apps/tf-visualizer/coverage.xml
         flags: backend
         name: backend-coverage
 
@@ -145,7 +145,7 @@ jobs:
         docker run --rm -v ${{ github.workspace }}:/workspace \
           ${{ needs.build-ci-image.outputs.image-tag }} \
           bash -c "
-            cd /workspace/apps/hello-world/frontend
+            cd /workspace/apps/tf-visualizer/frontend
             npm ci
             npm run lint || true
             npm run build

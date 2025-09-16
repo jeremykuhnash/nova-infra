@@ -1,11 +1,11 @@
 [tool.ruff]
 # Cache directory configuration for root-level ruff runs
-cache-dir = "apps/hello-world/work/ruff"
+cache-dir = "apps/tf-visualizer/work/ruff"
 
 [tool.mypy]
 # Cache directory configuration for root-level mypy runs
-cache_dir = "apps/hello-world/work/mypy"
+cache_dir = "apps/tf-visualizer/work/mypy"
 
 [tool.pytest.ini_options]
 # Cache directory configuration for root-level pytest runs
-cache_dir = "apps/hello-world/work/pytest"
+cache_dir = "apps/tf-visualizer/work/pytest"
