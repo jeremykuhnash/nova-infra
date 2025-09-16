@@ -1,0 +1,272 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "generated": "2025-09-16",
+    "description": "Tool manifest for Nova Infrastructure project"
+  },
+  "categories": {
+    "infrastructure": {
+      "description": "Infrastructure as Code tools",
+      "tools": {
+        "terraform": {
+          "version": "1.5.0",
+          "purpose": "Infrastructure provisioning",
+          "install_method": "binary",
+          "install_script": "scripts/install-terraform-tools.sh",
+          "validation": "terraform version",
+          "makefile_targets": ["tf-init", "tf-plan", "tf-apply", "tf-destroy"],
+          "ci_integration": true,
+          "pre_commit": false
+        },
+        "tflint": {
+          "version": "latest",
+          "purpose": "Terraform linting",
+          "install_method": "script",
+          "install_script": "scripts/install-terraform-tools.sh",
+          "validation": "tflint --version",
+          "makefile_targets": ["tf-lint"],
+          "ci_integration": true,
+          "pre_commit": true,
+          "config": ".tflint.hcl"
+        },
+        "tfsec": {
+          "version": "latest",
+          "purpose": "Terraform security scanning",
+          "install_method": "script",
+          "install_script": "scripts/install-terraform-tools.sh",
+          "validation": "tfsec --version",
+          "makefile_targets": ["tf-security"],
+          "ci_integration": true,
+          "pre_commit": true
+        }
+      }
+    },
+    "containerization": {
+      "description": "Container and orchestration tools",
+      "tools": {
+        "docker": {
+          "version": ">=20.0",
+          "purpose": "Container runtime",
+          "install_method": "package_manager",
+          "validation": "docker --version",
+          "makefile_targets": ["docker-build", "docker-run"],
+          "ci_integration": true,
+          "pre_commit": false
+        },
+        "kubectl": {
+          "version": ">=1.28",
+          "purpose": "Kubernetes CLI",
+          "install_method": "binary",
+          "install_script": "scripts/setup.sh",
+          "validation": "kubectl version --client",
+          "makefile_targets": ["k8s-deploy", "k8s-status"],
+          "ci_integration": true,
+          "pre_commit": false
+        },
+        "helm": {
+          "version": ">=3.0",
+          "purpose": "Kubernetes package manager",
+          "install_method": "binary",
+          "install_script": "scripts/setup.sh",
+          "validation": "helm version",
+          "makefile_targets": ["helm-install", "helm-upgrade"],
+          "ci_integration": true,
+          "pre_commit": false
+        }
+      }
+    },
+    "development": {
+      "description": "Development and testing tools",
+      "tools": {
+        "python": {
+          "version": "3.12",
+          "purpose": "Python runtime",
+          "install_method": "package_manager",
+          "validation": "python3 --version",
+          "makefile_targets": ["python-test", "python-lint"],
+          "ci_integration": true,
+          "pre_commit": false
+        },
+        "poetry": {
+          "version": ">=1.5",
+          "purpose": "Python dependency management",
+          "install_method": "pip",
+          "validation": "poetry --version",
+          "makefile_targets": ["poetry-install", "poetry-update"],
+          "ci_integration": true,
+          "pre_commit": false,
+          "config": "pyproject.toml"
+        },
+        "pytest": {
+          "version": ">=7.0",
+          "purpose": "Python testing framework",
+          "install_method": "poetry",
+          "validation": "pytest --version",
+          "makefile_targets": ["test", "test-cov"],
+          "ci_integration": true,
+          "pre_commit": false,
+          "config": "pyproject.toml"
+        },
+        "mypy": {
+          "version": ">=1.0",
+          "purpose": "Python type checking",
+          "install_method": "poetry",
+          "validation": "mypy --version",
+          "makefile_targets": ["typecheck", "mypy"],
+          "ci_integration": true,
+          "pre_commit": true,
+          "config": "pyproject.toml"
+        },
+        "ruff": {
+          "version": ">=0.1",
+          "purpose": "Python linting and formatting",
+          "install_method": "poetry",
+          "validation": "ruff --version",
+          "makefile_targets": ["lint", "format"],
+          "ci_integration": true,
+          "pre_commit": true,
+          "config": "pyproject.toml"
+        },
+        "nodejs": {
+          "version": "18",
+          "purpose": "JavaScript runtime",
+          "install_method": "package_manager",
+          "validation": "node --version",
+          "makefile_targets": ["js-build", "js-test"],
+          "ci_integration": true,
+          "pre_commit": false
+        },
+        "npm": {
+          "version": ">=9.0",
+          "purpose": "Node package manager",
+          "install_method": "nodejs",
+          "validation": "npm --version",
+          "makefile_targets": ["npm-install", "npm-build"],
+          "ci_integration": true,
+          "pre_commit": false,
+          "config": "package.json"
+        },
+        "eslint": {
+          "version": ">=8.0",
+          "purpose": "JavaScript linting",
+          "install_method": "npm",
+          "validation": "npx eslint --version",
+          "makefile_targets": ["js-lint"],
+          "ci_integration": true,
+          "pre_commit": true,
+          "config": ".eslintrc.js"
+        },
+        "prettier": {
+          "version": ">=3.0",
+          "purpose": "JavaScript formatting",
+          "install_method": "npm",
+          "validation": "npx prettier --version",
+          "makefile_targets": ["js-format"],
+          "ci_integration": true,
+          "pre_commit": true,
+          "config": ".prettierrc"
+        }
+      }
+    },
+    "quality": {
+      "description": "Code quality and security tools",
+      "tools": {
+        "pre-commit": {
+          "version": ">=3.0",
+          "purpose": "Git hooks management",
+          "install_method": "pip",
+          "validation": "pre-commit --version",
+          "makefile_targets": ["pre-commit-install", "pre-commit-run"],
+          "ci_integration": true,
+          "pre_commit": false,
+          "config": ".pre-commit-config.yaml"
+        },
+        "trivy": {
+          "version": "latest",
+          "purpose": "Container security scanning",
+          "install_method": "binary",
+          "validation": "trivy --version",
+          "makefile_targets": ["security-scan"],
+          "ci_integration": true,
+          "pre_commit": false
+        },
+        "bandit": {
+          "version": ">=1.7",
+          "purpose": "Python security analysis",
+          "install_method": "poetry",
+          "validation": "bandit --version",
+          "makefile_targets": ["security-python"],
+          "ci_integration": true,
+          "pre_commit": true
+        }
+      }
+    },
+    "cloud": {
+      "description": "Cloud platform tools",
+      "tools": {
+        "aws-cli": {
+          "version": "2",
+          "purpose": "AWS command line interface",
+          "install_method": "binary",
+          "install_script": "scripts/setup.sh",
+          "validation": "aws --version",
+          "makefile_targets": ["aws-login", "aws-deploy"],
+          "ci_integration": true,
+          "pre_commit": false
+        },
+        "gh": {
+          "version": ">=2.0",
+          "purpose": "GitHub CLI",
+          "install_method": "binary",
+          "install_script": "scripts/setup.sh",
+          "validation": "gh --version",
+          "makefile_targets": ["gh-deploy", "gh-release"],
+          "ci_integration": true,
+          "pre_commit": false
+        }
+      }
+    },
+    "project": {
+      "description": "Project-specific tools and scripts",
+      "tools": {
+        "dependency-analyzer": {
+          "version": "1.0.0",
+          "purpose": "Generate project dependency graphs",
+          "install_method": "builtin",
+          "validation": "python scripts/generate-deps.py --help",
+          "makefile_targets": ["deps-graph", "deps-analyze"],
+          "ci_integration": false,
+          "pre_commit": false,
+          "script": "scripts/generate-deps.py"
+        }
+      }
+    }
+  },
+  "integration_matrix": {
+    "makefile_coverage": 85,
+    "ci_coverage": 90,
+    "pre_commit_coverage": 60,
+    "missing_integrations": [
+      "tflint in Makefile",
+      "tfsec in Makefile",
+      "trivy in pre-commit",
+      "bandit in Makefile"
+    ]
+  },
+  "installation": {
+    "scripts": {
+      "setup.sh": "Primary setup script for core tools",
+      "install-terraform-tools.sh": "Terraform ecosystem tools"
+    },
+    "requirements": {
+      "python": "pyproject.toml",
+      "javascript": "package.json",
+      "system": "documented in README.md"
+    }
+  },
+  "validation": {
+    "command": "python scripts/validate-tools.py",
+    "makefile_target": "validate-tools",
+    "ci_step": "tool-validation"
+  }
+}

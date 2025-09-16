@@ -2,8 +2,10 @@
 
 .PHONY: help all test build deploy clean
 .PHONY: app-help app-all app-test app-build app-deploy app-clean
-.PHONY: tf-help tf-init tf-plan tf-apply tf-destroy tf-destroy-confirm tf-output
+.PHONY: tf-help tf-init tf-plan tf-apply tf-destroy tf-destroy-confirm tf-output tf-lint tf-security
 .PHONY: aws-auth aws-auth-check aws-auth-test
+.PHONY: deps-graph deps-analyze validate-tools security-scan
+.PHONY: pre-commit-install pre-commit-run format lint typecheck
 
 # Default target - show available commands
 .DEFAULT_GOAL := help
@@ -42,6 +44,8 @@ help:
 	@echo "  make tf-destroy      - Destroy infrastructure (auto-approve)"
 	@echo "  make tf-destroy-confirm - Destroy infrastructure (with confirmation)"
 	@echo "  make tf-output       - Show Terraform outputs"
+	@echo "  make tf-lint         - Run Terraform linting (tflint)"
+	@echo "  make tf-security     - Run Terraform security scan (tfsec)"
 	@echo ""
 	@echo "AWS Authentication Commands:"
 	@echo "  make aws-auth        - Interactive AWS authentication helper"
@@ -54,6 +58,17 @@ help:
 	@echo "  make ci-validate     - Run all validations in CI container"
 	@echo "  make ci-terraform    - Start Terraform tools container"
 	@echo "  make ci-python       - Start Python development container"
+	@echo ""
+	@echo "Quality & Analysis Commands:"
+	@echo "  make validate-tools  - Check all required tools are installed"
+	@echo "  make security-scan   - Run all security scans"
+	@echo "  make deps-graph      - Generate dependency graphs"
+	@echo "  make deps-analyze    - Analyze project dependencies"
+	@echo "  make pre-commit-install - Install pre-commit hooks"
+	@echo "  make pre-commit-run  - Run pre-commit hooks"
+	@echo "  make format          - Format all code"
+	@echo "  make lint            - Lint all code"
+	@echo "  make typecheck       - Run type checking"
 	@echo ""
 	@echo "Quick Start:"
 	@echo "  make app-help        # See all app-specific commands"
@@ -215,3 +230,69 @@ ci-terraform:
 ci-python:
 	@echo "Starting Python development container..."
 	@docker-compose -f docker-compose.ci.yml run --rm python-dev
+
+# Additional Terraform tool targets
+tf-lint:
+	@echo "Running Terraform linting..."
+	@cd $(TF_DIR) && tflint --init && tflint
+
+tf-security:
+	@echo "Running Terraform security scan..."
+	@cd $(TF_DIR) && tfsec .
+
+# Dependency analysis targets
+deps-graph:
+	@echo "Generating dependency graphs..."
+	@python scripts/generate-deps.py --format all
+
+deps-analyze:
+	@echo "Analyzing project dependencies..."
+	@python scripts/generate-deps.py --format json
+
+# Tool validation target
+validate-tools:
+	@echo "Validating tool installations..."
+	@echo "Checking required tools from tools.json..."
+	@terraform version || echo "❌ terraform not found"
+	@tflint --version || echo "❌ tflint not found"
+	@tfsec --version || echo "❌ tfsec not found"
+	@kubectl version --client || echo "❌ kubectl not found"
+	@helm version || echo "❌ helm not found"
+	@python3 --version || echo "❌ python3 not found"
+	@poetry --version || echo "❌ poetry not found"
+	@node --version || echo "❌ node not found"
+	@npm --version || echo "❌ npm not found"
+	@aws --version || echo "❌ aws-cli not found"
+	@gh --version || echo "❌ gh not found"
+	@docker --version || echo "❌ docker not found"
+	@pre-commit --version || echo "❌ pre-commit not found"
+	@echo "✅ Tool validation complete"
+
+# Security scanning targets
+security-scan:
+	@echo "Running security scans..."
+	@$(MAKE) -C $(APP_DIR) security || echo "⚠️  Application security scan failed"
+	@$(MAKE) tf-security || echo "⚠️  Terraform security scan failed"
+
+# Pre-commit targets
+pre-commit-install:
+	@echo "Installing pre-commit hooks..."
+	@pre-commit install
+
+pre-commit-run:
+	@echo "Running pre-commit hooks..."
+	@pre-commit run --all-files
+
+# Code quality targets
+format:
+	@echo "Formatting all code..."
+	@$(MAKE) -C $(APP_DIR) format
+
+lint:
+	@echo "Linting all code..."
+	@$(MAKE) -C $(APP_DIR) lint
+	@$(MAKE) tf-lint
+
+typecheck:
+	@echo "Running type checks..."
+	@$(MAKE) -C $(APP_DIR) typecheck

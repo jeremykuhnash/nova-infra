@@ -14,7 +14,7 @@ repos:
         description: Trims trailing whitespace from files
       - id: mixed-line-ending
         name: Fix Mixed Line Endings
-        args: ['--fix=lf']
+        args: ["--fix=lf"]
         description: Ensures consistent line endings (LF)
       - id: check-yaml
         name: Check YAML
@@ -31,7 +31,7 @@ repos:
         description: Prevents committing merge conflict markers
       - id: check-added-large-files
         name: Check Large Files
-        args: ['--maxkb=1000']
+        args: ["--maxkb=1000"]
         description: Prevents large files from being committed
       - id: detect-private-key
         name: Detect Private Keys
@@ -43,7 +43,7 @@ repos:
     hooks:
       - id: ruff
         name: Ruff Linter
-        args: ['--fix']
+        args: ["--fix"]
         description: Fast Python linter with autofix
       - id: ruff-format
         name: Ruff Formatter
@@ -55,9 +55,9 @@ repos:
     hooks:
       - id: mypy
         name: MyPy Type Checker
-        args: ['--ignore-missing-imports', '--check-untyped-defs']
+        args: ["--ignore-missing-imports", "--check-untyped-defs"]
         files: ^(backend|tests)/.*\.py$
-        additional_dependencies: ['types-flask', 'types-requests']
+        additional_dependencies: ["types-flask", "types-requests"]
         description: Static type checker for Python
 
   # Terraform hooks
@@ -75,17 +75,71 @@ repos:
         description: Linter for Terraform files
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
-      # - id: terraform_tfsec
-      #   name: Terraform Security Scan
-      #   description: Static analysis of Terraform for security issues
-      #   Note: Disabled as tfsec warnings are expected for dev environment
+      - id: terraform_tfsec
+        name: Terraform Security Scan
+        description: Static analysis of Terraform for security issues
+        args:
+          - --args=--minimum-severity=HIGH
+
+  # JavaScript/TypeScript hooks
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.56.0
+    hooks:
+      - id: eslint
+        name: ESLint
+        files: \.(js|jsx|ts|tsx)$
+        types: [file]
+        additional_dependencies:
+          - "@typescript-eslint/eslint-plugin"
+          - "@typescript-eslint/parser"
+          - "eslint-config-prettier"
+          - "eslint-plugin-react"
+          - "eslint-plugin-react-hooks"
+        description: JavaScript/TypeScript linter
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        name: Prettier
+        files: \.(js|jsx|ts|tsx|json|css|scss|md|yaml|yml)$
+        exclude: '^(poetry\.lock|package-lock\.json)$'
+        description: Code formatter for multiple languages
+
+  # Security hooks
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        name: Bandit Security Linter
+        files: ^(backend|tests)/.*\.py$
+        args: ["-r", "-ll"]
+        description: Security linter for Python code
+
+  # Docker hooks
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        name: Hadolint
+        description: Dockerfile linter
+        files: Dockerfile.*
+
+  # Commit message hooks
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.0.0
+    hooks:
+      - id: conventional-pre-commit
+        name: Conventional Commits
+        stages: [commit-msg]
+        description: Ensures commit messages follow conventional format
 
 # Configuration
 default_language_version:
   python: python3.12
 
 # Run hooks on all files by default
-files: ''
+files: ""
 
 # Exclude directories
 exclude: |

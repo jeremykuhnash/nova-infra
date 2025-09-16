@@ -1,0 +1,299 @@
+name: Release Management
+
+on:
+  push:
+    tags:
+      - "v*"
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g., v1.0.0)"
+        required: true
+        type: string
+      create_release:
+        description: "Create GitHub release"
+        required: false
+        default: true
+        type: boolean
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: nova-infra
+
+jobs:
+  # Build release artifacts
+  build-release:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      image-uri: ${{ steps.build.outputs.image-uri }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            VERSION="${{ github.ref_name }}"
+          else
+            VERSION="${{ github.event.release.tag_name }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push release image
+        id: build
+        working-directory: ./apps/tf-visualizer
+        run: |
+          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY=${{ env.ECR_REPOSITORY }}
+          VERSION=${{ steps.version.outputs.version }}
+
+          # Build versioned image
+          IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$VERSION"
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
+
+          # Also tag as stable if this is a release (not pre-release)
+          if [[ ! "$VERSION" =~ (alpha|beta|rc) ]]; then
+            STABLE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:stable"
+            docker tag $IMAGE_URI $STABLE_URI
+            docker push $STABLE_URI
+          fi
+
+          echo "image-uri=$IMAGE_URI" >> $GITHUB_OUTPUT
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.build.outputs.image-uri }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Create Helm package
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          # Remove 'v' prefix for Helm chart version
+          CHART_VERSION=${VERSION#v}
+
+          # Update chart version
+          sed -i "s/^version:.*/version: $CHART_VERSION/" helm/tf-visualizer/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: \"$VERSION\"/" helm/tf-visualizer/Chart.yaml
+
+          # Package chart
+          helm package helm/tf-visualizer --destination ./artifacts/
+
+          # Create checksums
+          cd artifacts
+          sha256sum *.tgz > checksums.txt
+
+      - name: Create release bundle
+        run: |
+          mkdir -p artifacts/
+
+          # Copy key files
+          cp README.md artifacts/
+          cp CHANGELOG.md artifacts/ 2>/dev/null || echo "No CHANGELOG.md found"
+          cp -r terraform/ artifacts/terraform/
+          cp -r scripts/ artifacts/scripts/
+          cp sbom.spdx.json artifacts/
+
+          # Create installation script
+          cat > artifacts/install.sh << 'EOF'
+          #!/bin/bash
+          set -e
+          echo "Installing Terraform Infrastructure Visualizer..."
+
+          # Check prerequisites
+          command -v terraform >/dev/null 2>&1 || { echo "Terraform required but not installed."; exit 1; }
+          command -v kubectl >/dev/null 2>&1 || { echo "kubectl required but not installed."; exit 1; }
+          command -v helm >/dev/null 2>&1 || { echo "Helm required but not installed."; exit 1; }
+
+          echo "Prerequisites check passed!"
+          echo "Follow the README.md for deployment instructions."
+          EOF
+          chmod +x artifacts/install.sh
+
+          # Create archive
+          tar -czf tf-visualizer-${{ steps.version.outputs.version }}.tar.gz -C artifacts .
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            *.tar.gz
+            artifacts/
+          retention-days: 30
+
+  # Security scan for release
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: [build-release]
+
+    steps:
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ needs.build-release.outputs.image-uri }}
+          format: "json"
+          output: "trivy-results.json"
+
+      - name: Check for critical vulnerabilities
+        run: |
+          CRITICAL=$(jq '.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL") | length' trivy-results.json | wc -l)
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "❌ Critical vulnerabilities found! Release blocked."
+            jq '.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")' trivy-results.json
+            exit 1
+          else
+            echo "✅ No critical vulnerabilities found."
+          fi
+
+  # Create GitHub release
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-release, security-scan]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          VERSION=${{ needs.build-release.outputs.version }}
+
+          # Generate changelog from git commits
+          if [ -f CHANGELOG.md ]; then
+            # Extract section for this version
+            CHANGELOG=$(awk "/^## \[$VERSION\]/,/^## \[/{if(/^## \[/ && !/^## \[$VERSION\]/) exit; print}" CHANGELOG.md | head -n -1)
+          else
+            # Generate from git log
+            PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+            if [ -n "$PREV_TAG" ]; then
+              CHANGELOG=$(git log --pretty=format:"- %s" $PREV_TAG..HEAD)
+            else
+              CHANGELOG="Initial release"
+            fi
+          fi
+
+          # Save changelog
+          cat > release-notes.md << EOF
+          ## What's Changed
+
+          $CHANGELOG
+
+          ## Installation
+
+          \`\`\`bash
+          # Download and extract
+          wget https://github.com/${{ github.repository }}/releases/download/$VERSION/tf-visualizer-$VERSION.tar.gz
+          tar -xzf tf-visualizer-$VERSION.tar.gz
+
+          # Follow installation guide
+          ./install.sh
+          \`\`\`
+
+          ## Docker Image
+
+          \`\`\`bash
+          docker pull ${{ needs.build-release.outputs.image-uri }}
+          \`\`\`
+
+          ## Verification
+
+          - SBOM: \`sbom.spdx.json\`
+          - Checksums: \`checksums.txt\`
+
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/$PREV_TAG...$VERSION
+          EOF
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.build-release.outputs.version }}
+          name: Release ${{ needs.build-release.outputs.version }}
+          body_path: release-notes.md
+          files: |
+            tf-visualizer-${{ needs.build-release.outputs.version }}.tar.gz
+            artifacts/checksums.txt
+            artifacts/sbom.spdx.json
+            artifacts/*.tgz
+          draft: false
+          prerelease: ${{ contains(needs.build-release.outputs.version, 'alpha') || contains(needs.build-release.outputs.version, 'beta') || contains(needs.build-release.outputs.version, 'rc') }}
+
+  # Deploy release to production
+  deploy-release:
+    name: Deploy Release
+    runs-on: ubuntu-latest
+    needs: [build-release, create-release]
+    if: github.event_name == 'release' && github.event.action == 'published'
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name tf-visualizer-cluster
+
+      - name: Deploy release with Helm
+        run: |
+          VERSION=${{ needs.build-release.outputs.version }}
+          IMAGE_URI=${{ needs.build-release.outputs.image-uri }}
+          IMAGE_REPO=$(echo $IMAGE_URI | cut -d':' -f1)
+
+          helm upgrade --install tf-visualizer ./helm/tf-visualizer \
+            --set image.repository=$IMAGE_REPO \
+            --set image.tag=$VERSION \
+            --wait --timeout=300s
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/tf-visualizer
+          kubectl get pods -l app=tf-visualizer
+
+          # Basic health check
+          LB_URL=$(kubectl get service tf-visualizer -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          curl -f http://$LB_URL/health
+
+          echo "✅ Release ${{ needs.build-release.outputs.version }} deployed successfully!"

@@ -6,6 +6,8 @@
 
 Parses and visualizes Terraform configurations as interactive diagrams. Deployed on AWS EKS.
 
+**Complete Infrastructure-as-Code repository demonstrating deployment of a Terraform visualization application in Kubernetes, including the Kubernetes cluster itself.**
+
 ## Project Status
 
 - Infrastructure: EKS, VPC, ECR, ALB deployed
@@ -44,12 +46,14 @@ GitHub → GitHub Actions → AWS ECR
 - kubectl >= 1.28
 - Helm >= 3.0
 - AWS CLI v2
-- Python 3.12+ (development)
+- Python 3.12+
+- Poetry (Python dependency management)
 - Node.js 18+ (frontend)
 
 ## Quick Start
 
 ### Step 1: Setup
+
 ```bash
 git clone https://github.com/jeremykuhnash/nova-infra.git
 cd nova-infra
@@ -57,18 +61,21 @@ cd nova-infra
 ```
 
 ### Step 2: Configure AWS
+
 ```bash
 aws configure  # Enter: Access Key, Secret Key, Region (us-east-1), Output (json)
 aws sts get-caller-identity  # Verify
 ```
 
 ### Step 3: Initialize Backend
+
 ```bash
 cd terraform
 ./init-backend.sh  # Creates S3 bucket and DynamoDB table
 ```
 
 ### Step 4: Deploy Infrastructure
+
 ```bash
 terraform plan -out=tfplan
 terraform apply tfplan  # Takes 15-20 minutes
@@ -78,6 +85,7 @@ export EKS_CLUSTER=$(terraform output -raw eks_cluster_name)
 ```
 
 ### Step 5: Configure Kubernetes
+
 ```bash
 aws eks update-kubeconfig --region us-east-1 --name $EKS_CLUSTER
 kubectl get nodes  # Verify 3 nodes are Ready
@@ -87,6 +95,7 @@ kubectl config current-context  # Verify context
 ### Step 6: Build and Deploy Application
 
 #### Option A: GitHub Actions Deploy
+
 ```bash
 # Push to main triggers automatic deployment
 git push origin main
@@ -97,6 +106,7 @@ gh run watch  # Monitor deployment
 ```
 
 #### Option B: Manual Deploy
+
 ```bash
 cd ../apps/tf-visualizer
 docker build -t tf-visualizer .
@@ -113,6 +123,7 @@ helm install tf-visualizer ./helm/tf-visualizer \
 ```
 
 ### Step 7: Access Application
+
 ```bash
 LB_URL=$(kubectl get service tf-visualizer -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 curl http://$LB_URL/health
@@ -120,6 +131,7 @@ echo "Application URL: http://$LB_URL"
 ```
 
 ### Step 8: Cleanup
+
 ```bash
 helm uninstall tf-visualizer
 cd terraform
@@ -130,20 +142,22 @@ terraform destroy -auto-approve
 
 ### Workflows
 
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| `build-deploy.yml` | Push to main/develop | Test, build, deploy |
-| `terraform.yml` | Push to main, manual | Infrastructure management |
-| `ecr-push.yml` | Push to main/develop | Docker image management |
-| `terraform-validate.yml` | PR to main | Terraform validation |
+| Workflow                 | Trigger              | Purpose                   |
+| ------------------------ | -------------------- | ------------------------- |
+| `build-deploy.yml`       | Push to main/develop | Test, build, deploy       |
+| `terraform.yml`          | Push to main, manual | Infrastructure management |
+| `ecr-push.yml`           | Push to main/develop | Docker image management   |
+| `terraform-validate.yml` | PR to main           | Terraform validation      |
 
 ### Setup GitHub Secrets
+
 ```bash
 # Required: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 ./scripts/setup-github-secrets.sh  # Reads from ~/.aws/credentials
 ```
 
 ### Deploy via GitHub Actions
+
 ```bash
 gh workflow run terraform.yml -f action=apply  # Infrastructure
 gh workflow run build-deploy.yml               # Application
@@ -151,6 +165,7 @@ gh run watch                                   # Monitor
 ```
 
 ### Quality Gates
+
 - Test Coverage: 97% minimum
 - Security: tfsec scanning
 - Validation: Terraform on PRs
@@ -161,17 +176,20 @@ gh run watch                                   # Monitor
 ## Features
 
 ### Parser
+
 - Extracts resources, modules, variables from .tf files
 - Supports nested modules and dependencies
 - JSON output for visualization
 
 ### Visualization
+
 - React frontend with drag-and-drop
 - Color-coded resources by type
 - Dependency arrows
 - Zoom/pan controls
 
 ### API
+
 - `GET /health` - Health check
 - `GET /api/entities` - Cached entities
 - `POST /api/parse` - Parse .tf files
@@ -182,6 +200,7 @@ gh run watch                                   # Monitor
 ## Configuration
 
 ### Terraform
+
 ```hcl
 # terraform/terraform.tfvars
 project_name = "tf-visualizer"
@@ -192,6 +211,7 @@ node_group_instance_types = ["t3.medium"]
 ```
 
 ### Helm
+
 ```yaml
 # helm/tf-visualizer/values.yaml
 replicaCount: 2
@@ -207,25 +227,30 @@ autoscaling:
 ## Testing
 
 ### Backend Tests
+
 ```bash
-cd apps/hello-world
-make test  # pytest with coverage (97%)
+cd apps/tf-visualizer
+poetry install  # Install dependencies
+make test       # pytest with coverage (97%)
 ```
 
 ### Parser Test
+
 ```bash
-cd apps/hello-world
-python backend/parser.py ./test-terraform
+cd apps/tf-visualizer
+poetry run python backend/parser.py ./test-terraform
 ```
 
 ### Local Development
+
 ```bash
 # Backend
-cd apps/hello-world
+cd apps/tf-visualizer
+poetry install
 make dev
 
 # Frontend
-cd apps/hello-world/frontend
+cd apps/tf-visualizer/frontend
 npm install && npm start
 
 # Docker Compose
@@ -233,8 +258,9 @@ docker-compose -f docker-compose.local.yml up
 ```
 
 ### Quality Checks
+
 ```bash
-cd apps/hello-world
+cd apps/tf-visualizer
 make lint      # Linters
 make format    # Auto-format
 make security  # Security scan
@@ -250,7 +276,7 @@ nova-infra/
 │   ├── modules/           # EKS, networking, ECR
 │   ├── bootstrap/         # Backend state setup
 │   └── init-backend.sh    # Initialize backend
-├── apps/hello-world/       # Application
+├── apps/tf-visualizer/     # Application
 │   ├── backend/           # Flask API + parser
 │   ├── frontend/          # React UI
 │   ├── tests/             # Test suite (97%)
@@ -263,6 +289,7 @@ nova-infra/
 ## Security & Monitoring
 
 ### Security
+
 - IRSA for pod authentication
 - Network policies
 - Security groups
@@ -270,6 +297,7 @@ nova-infra/
 - Non-root containers
 
 ### Monitoring
+
 - CloudWatch insights
 - Metrics server
 - HPA auto-scaling
@@ -285,25 +313,27 @@ terraform destroy -auto-approve
 
 ## Cost Estimation
 
-| Service | Hourly | Monthly |
-|---------|--------|----------|
-| EKS Cluster | $0.10 | $73 |
-| EC2 Nodes (3x t3.medium) | $0.13 | $92 |
-| ALB | $0.03 | $18 |
-| NAT Gateways (2x) | $0.09 | $66 |
-| **Total** | **$0.35** | **$249** |
+| Service                  | Hourly    | Monthly  |
+| ------------------------ | --------- | -------- |
+| EKS Cluster              | $0.10     | $73      |
+| EC2 Nodes (3x t3.medium) | $0.13     | $92      |
+| ALB                      | $0.03     | $18      |
+| NAT Gateways (2x)        | $0.09     | $66      |
+| **Total**                | **$0.35** | **$249** |
 
-*Costs vary by region*
+_Costs vary by region_
 
 ## Advanced Configuration
 
 ### Multi-Environment
+
 ```bash
 cd terraform/environments/prod
 terraform apply
 ```
 
 ### Custom Domain
+
 ```yaml
 # helm/tf-visualizer/values.yaml
 ingress:
@@ -313,6 +343,7 @@ ingress:
 ```
 
 ### PostgreSQL
+
 ```yaml
 postgresql:
   enabled: true
@@ -323,6 +354,7 @@ postgresql:
 ## Development Tools
 
 ### CI Container
+
 All tools pre-installed for consistency:
 
 ```bash
@@ -333,7 +365,7 @@ make ci-terraform  # Terraform tools
 make ci-python     # Python dev env
 ```
 
-Includes: Terraform, TFLint, Trivy, AWS CLI, kubectl, Helm, Python 3.12, Node.js 18, pre-commit hooks.
+Includes: Terraform, TFLint, tfsec, AWS CLI, kubectl, Helm, Python 3.12, Node.js 18, pre-commit hooks.
 
 ## Contributing
 

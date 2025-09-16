@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # Backend development with hot reload
@@ -42,6 +42,7 @@ services:
       - REACT_APP_API_URL=http://localhost:5000
     volumes:
       - ./frontend:/app
+      - ./work/frontend:/app/work/frontend
       - /app/node_modules
     networks:
       - tf-network

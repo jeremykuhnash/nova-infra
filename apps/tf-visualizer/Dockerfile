@@ -22,35 +22,50 @@ COPY frontend/src ./src
 RUN npm run build
 
 # Stage 2: Python backend runtime
-FROM python:3.11-slim AS runtime
+FROM python:3.12-slim AS runtime
 
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+    curl \
     gcc \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry
+RUN pip install --no-cache-dir poetry
 
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 WORKDIR /app
 
-# Copy Python requirements and install
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy Poetry files
+COPY pyproject.toml poetry.lock* ./
+
+# Configure Poetry: don't create venv, install to system Python
+ENV POETRY_VENV_IN_PROJECT=false \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache \
+    POETRY_VIRTUALENVS_CREATE=false
+
+# Install Python dependencies directly to system Python
+RUN poetry install --only=main --no-root && rm -rf $POETRY_CACHE_DIR
 
 # Copy backend code
 COPY backend ./backend
 COPY app.py .
 
-# Copy frontend build from previous stage
-COPY --from=frontend-builder /app/frontend/build ./frontend/build
+# Copy work directory structure
+COPY work ./work
+
+# Copy frontend build from previous stage to work directory for versioned builds
+COPY --from=frontend-builder /app/frontend/../work/frontend/build ./work/frontend/build
 
 # Copy test Terraform files for visualization (if they exist)
 COPY --chown=appuser:appuser test-terraform ./terraform-examples
 
-# Create work directory for tf_entities.json
-RUN mkdir -p work/build && chown -R appuser:appuser /app
+# Ensure work directory structure exists and set permissions
+RUN mkdir -p work/frontend/build && chown -R appuser:appuser /app
 
 # Switch to non-root user
 USER appuser
@@ -60,7 +75,7 @@ EXPOSE 5000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD python -c "import requests; requests.get('http://localhost:5000/health')" || exit 1
+    CMD curl -f http://localhost:5000/health || exit 1
 
-# Run the application with gunicorn for production
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "4", "--timeout", "60", "backend.api:app"]
+# Default command - gunicorn is now in system PATH
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "app:app"]

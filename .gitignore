@@ -1,6 +1,5 @@
 # Local .terraform directories
 .terraform/
-scripts/*
 .claude
 
 # Python tool caches
@@ -47,6 +46,11 @@ terraform.rc
 /package.json
 # /package-lock.json  # Needed for npm ci in Docker builds
 /node_modules/
+
+# Frontend build artifacts (staged in work/frontend/)
+apps/*/frontend/node_modules/
+apps/*/.venv/
+*.log
 
 # Progress Markers
 examples/

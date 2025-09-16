@@ -45,9 +45,9 @@ directories=(
     "terraform/modules/eks"
     "terraform/modules/networking"
     "terraform/modules/ecr"
-    "apps/hello-world/backend"
-    "apps/hello-world/frontend/src"
-    "apps/hello-world/tests"
+    "apps/tf-visualizer/backend"
+    "apps/tf-visualizer/frontend/src"
+    "apps/tf-visualizer/tests"
     "helm/tf-visualizer/templates"
     ".github/workflows"
 )
@@ -65,13 +65,13 @@ files=(
     "terraform/variables.tf"
     "terraform/outputs.tf"
     "terraform/versions.tf"
-    "apps/hello-world/Dockerfile"
-    "apps/hello-world/requirements.txt"
-    "apps/hello-world/app.py"
-    "apps/hello-world/backend/parser.py"
-    "apps/hello-world/backend/api.py"
-    "apps/hello-world/frontend/package.json"
-    "apps/hello-world/frontend/src/App.tsx"
+    "apps/tf-visualizer/Dockerfile"
+    "apps/tf-visualizer/requirements.txt"
+    "apps/tf-visualizer/app.py"
+    "apps/tf-visualizer/backend/parser.py"
+    "apps/tf-visualizer/backend/api.py"
+    "apps/tf-visualizer/frontend/package.json"
+    "apps/tf-visualizer/frontend/src/App.tsx"
     "helm/tf-visualizer/Chart.yaml"
     "helm/tf-visualizer/values.yaml"
     ".github/workflows/build-deploy.yml"
@@ -116,7 +116,7 @@ echo "--------------------------"
 
 if command -v python3 &> /dev/null; then
     echo "Installing test dependencies..."
-    cd apps/hello-world
+    cd apps/tf-visualizer
     pip install -q -r requirements.txt 2>/dev/null || {
         echo -e "${YELLOW}⚠ Could not install Python dependencies${NC}"
     }
