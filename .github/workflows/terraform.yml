@@ -26,7 +26,7 @@ on:
           - destroy
 
 env:
-  TERRAFORM_VERSION: '1.6.0'
+  TERRAFORM_VERSION: '1.9.0'
   AWS_REGION: us-east-1
   TF_VAR_project_name: 'nova-infra'
 

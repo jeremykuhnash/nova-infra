@@ -22,7 +22,7 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  TERRAFORM_VERSION: '1.6.0'
+  TERRAFORM_VERSION: '1.9.0'
 
 jobs:
   check-prerequisites:
