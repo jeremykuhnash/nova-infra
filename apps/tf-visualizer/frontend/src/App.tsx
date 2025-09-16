@@ -6,6 +6,7 @@ import createEngine, {
 } from '@projectstorm/react-diagrams';
 import { CanvasWidget } from '@projectstorm/react-canvas-core';
 import axios from 'axios';
+import dagre from 'dagre';
 import './styles.css';
 
 interface TerraformEntity {
@@ -42,22 +43,23 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<TerraformData['metadata'] | null>(null);
   const [originalData, setOriginalData] = useState<TerraformData | null>(null);
+  const [layoutDirection, setLayoutDirection] = useState<'TB' | 'LR' | 'BT' | 'RL'>('TB');
 
-  // Filter state - default to only outputs visible
+  // Filter state - default to all visible for better initial view
   const [visibleCategories, setVisibleCategories] = useState<Set<string>>(
-    new Set(['output'])
+    new Set(['provider', 'resource', 'data', 'module', 'variable', 'output'])
   );
 
   useEffect(() => {
     loadTerraformData();
   }, []);
 
-  // Re-render diagram when filters change
+  // Re-render diagram when filters or layout change
   useEffect(() => {
     if (originalData) {
       renderDiagram(originalData);
     }
-  }, [visibleCategories]);
+  }, [visibleCategories, layoutDirection]);
 
   const loadTerraformData = async () => {
     try {
@@ -91,6 +93,47 @@ const App: React.FC = () => {
     }
   };
 
+  const applyDagreLayout = (
+    nodes: { [key: string]: DefaultNodeModel },
+    relationships: Relationship[]
+  ) => {
+    // Create a new directed graph
+    const g = new dagre.graphlib.Graph();
+    g.setGraph({
+      rankdir: layoutDirection, // Use selected layout direction
+      nodesep: 80,   // Horizontal space between nodes
+      ranksep: 120,  // Vertical space between ranks
+      marginx: 50,
+      marginy: 50,
+      edgesep: 20,   // Space between edges
+    });
+    g.setDefaultEdgeLabel(() => ({}));
+
+    // Add nodes to the graph
+    Object.entries(nodes).forEach(([id]) => {
+      g.setNode(id, { width: 150, height: 60 });
+    });
+
+    // Add edges to the graph
+    relationships.forEach((rel) => {
+      if (nodes[rel.source] && nodes[rel.target]) {
+        g.setEdge(rel.source, rel.target);
+      }
+    });
+
+    // Run the layout algorithm
+    dagre.layout(g);
+
+    // Apply the computed positions to the nodes
+    g.nodes().forEach((nodeId) => {
+      const nodeData = g.node(nodeId);
+      const node = nodes[nodeId];
+      if (node && nodeData) {
+        node.setPosition(nodeData.x - 75, nodeData.y - 30); // Center the node
+      }
+    });
+  };
+
   const renderDiagram = (data: TerraformData) => {
     const diagramModel = new DiagramModel();
     const nodeMap: { [key: string]: DefaultNodeModel } = {};
@@ -104,23 +147,30 @@ const App: React.FC = () => {
 
     // Create nodes for each visible entity
     filteredEntities.forEach((entity) => {
-      // For outputs, try to get the value from attributes
-      let displayName = entity.id;
+      // Build display name with type information
+      let displayName = '';
+
+      // Add resource type as the main label
+      if (entity.type) {
+        displayName = `[${entity.type}]\n`;
+      }
+
+      // Add the entity name
+      displayName += entity.name || entity.id;
+
+      // For outputs, add the value
       if (entity.category === 'output' && entity.attributes) {
-        // Check for common value patterns in output attributes
         const value = entity.attributes.value ||
                      entity.attributes.default ||
                      entity.attributes.description ||
                      '';
         if (value) {
-          // Extract the actual value if it's a reference
           const cleanValue = String(value)
             .replace(/\${/g, '')
             .replace(/}/g, '')
-            .replace(/"/g, '');
-
-          // Show both the output name and its value
-          displayName = `${entity.id}\n${cleanValue}`;
+            .replace(/"/g, '')
+            .slice(0, 30); // Limit length for display
+          displayName += `\n→ ${cleanValue}`;
         }
       }
 
@@ -129,17 +179,8 @@ const App: React.FC = () => {
         color: getNodeColor(entity.category),
       });
 
-      // Position the node
-      if (entity.position) {
-        node.setPosition(entity.position.x, entity.position.y);
-      } else {
-        // Default positioning if not provided - arrange by category
-        const categoryIndex = Array.from(visibleCategories).indexOf(entity.category);
-        const entityIndex = filteredEntities.filter(e => e.category === entity.category).indexOf(entity);
-        const x = 100 + (categoryIndex * 200) + (entityIndex % 3) * 150;
-        const y = 100 + Math.floor(entityIndex / 3) * 150;
-        node.setPosition(x, y);
-      }
+      // Initial position (will be updated by dagre)
+      node.setPosition(100, 100);
 
       // Add ports
       node.addInPort('In');
@@ -149,8 +190,14 @@ const App: React.FC = () => {
       diagramModel.addNode(node);
     });
 
+    // Apply dagre layout to position nodes nicely
+    const filteredRelationships = data.relationships.filter(
+      rel => nodeMap[rel.source] && nodeMap[rel.target]
+    );
+    applyDagreLayout(nodeMap, filteredRelationships);
+
     // Create links for relationships (only between visible nodes)
-    data.relationships.forEach((rel) => {
+    filteredRelationships.forEach((rel) => {
       const sourceNode = nodeMap[rel.source];
       const targetNode = nodeMap[rel.target];
 
@@ -162,6 +209,7 @@ const App: React.FC = () => {
           const link = new DefaultLinkModel();
           link.setSourcePort(sourcePort);
           link.setTargetPort(targetPort);
+          link.setColor('#94a3b8'); // Slate color for links
           diagramModel.addLink(link);
         }
       }
@@ -282,6 +330,17 @@ const App: React.FC = () => {
           <button onClick={showMinimal} className="btn">
             Minimal View
           </button>
+          <select
+            value={layoutDirection}
+            onChange={(e) => setLayoutDirection(e.target.value as any)}
+            className="btn"
+            style={{ padding: '0.4rem 0.8rem' }}
+          >
+            <option value="TB">Top → Bottom</option>
+            <option value="BT">Bottom → Top</option>
+            <option value="LR">Left → Right</option>
+            <option value="RL">Right → Left</option>
+          </select>
         </div>
       </header>
 
