@@ -89,8 +89,11 @@ jobs:
 
       - name: Run Python tests
         run: |
+          # List available images after loading
+          docker images | grep nova-infra-ci
+          # Run with the main branch tag
           docker run --rm -v ${{ github.workspace }}:/workspace \
-            nova-infra-ci:sha-$(echo ${{ github.sha }} | cut -c1-7) \
+            nova-infra-ci:main \
             bash -c "
               cd /workspace/apps/tf-visualizer
               make all
@@ -99,7 +102,7 @@ jobs:
       - name: Run Frontend tests
         run: |
           docker run --rm -v ${{ github.workspace }}:/workspace \
-            nova-infra-ci:sha-$(echo ${{ github.sha }} | cut -c1-7) \
+            nova-infra-ci:main \
             bash -c "
               cd /workspace/apps/tf-visualizer/frontend
               npm ci
@@ -135,8 +138,11 @@ jobs:
 
       - name: Run pre-commit
         run: |
+          # List available images after loading
+          docker images | grep nova-infra-ci
+          # Run with the main branch tag
           docker run --rm -v ${{ github.workspace }}:/workspace \
-            nova-infra-ci:sha-$(echo ${{ github.sha }} | cut -c1-7) \
+            nova-infra-ci:main \
             bash -c "
               cd /workspace
               git config --global --add safe.directory /workspace
