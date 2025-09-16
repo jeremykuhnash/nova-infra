@@ -1,8 +1,8 @@
 # Terraform Infrastructure Visualizer
 
-![Build Status](https://github.com/jeremykuhnash/nova-infra/actions/workflows/build-deploy.yml/badge.svg)
-![ECR Push](https://github.com/jeremykuhnash/nova-infra/actions/workflows/ecr-push.yml/badge.svg)
-![Terraform](https://github.com/jeremykuhnash/nova-infra/actions/workflows/terraform.yml/badge.svg)
+![CI Pipeline](https://github.com/jeremykuhnash/nova-infra/actions/workflows/ci.yml/badge.svg)
+![Terraform Operations](https://github.com/jeremykuhnash/nova-infra/actions/workflows/terraform.yml/badge.svg)
+![Release Management](https://github.com/jeremykuhnash/nova-infra/actions/workflows/release.yml/badge.svg)
 
 Parses and visualizes Terraform configurations as interactive diagrams. Deployed on AWS EKS.
 

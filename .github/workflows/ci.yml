@@ -90,7 +90,7 @@ jobs:
       - name: Run Python tests
         run: |
           docker run --rm -v ${{ github.workspace }}:/workspace \
-            ${{ needs.build-ci-image.outputs.image-tag }} \
+            nova-infra-ci:sha-$(echo ${{ github.sha }} | cut -c1-7) \
             bash -c "
               cd /workspace/apps/tf-visualizer
               make all
@@ -99,7 +99,7 @@ jobs:
       - name: Run Frontend tests
         run: |
           docker run --rm -v ${{ github.workspace }}:/workspace \
-            ${{ needs.build-ci-image.outputs.image-tag }} \
+            nova-infra-ci:sha-$(echo ${{ github.sha }} | cut -c1-7) \
             bash -c "
               cd /workspace/apps/tf-visualizer/frontend
               npm ci
@@ -136,7 +136,7 @@ jobs:
       - name: Run pre-commit
         run: |
           docker run --rm -v ${{ github.workspace }}:/workspace \
-            ${{ needs.build-ci-image.outputs.image-tag }} \
+            nova-infra-ci:sha-$(echo ${{ github.sha }} | cut -c1-7) \
             bash -c "
               cd /workspace
               git config --global --add safe.directory /workspace
