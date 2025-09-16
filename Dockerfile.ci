@@ -53,6 +53,7 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | g
 
 # Install Python tools
 RUN pip install --no-cache-dir \
+    poetry \
     pre-commit \
     ruff \
     mypy \
