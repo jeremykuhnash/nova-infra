@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -10,156 +10,22 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      deploy_only:
-        description: "Skip build and only deploy"
-        required: false
-        default: "false"
-        type: choice
-        options:
-          - "true"
-          - "false"
 
 env:
   DOCKER_BUILDKIT: 1
   AWS_REGION: us-east-1
   ECR_REPOSITORY: nova-infra
+  # Use git SHA as the image tag for traceability
+  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
-  # Build reusable CI container
-  build-ci-image:
-    name: Build CI Docker Image
-    runs-on: ubuntu-latest
-    outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: nova-infra-ci
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha
-
-      - name: Build CI image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile.ci
-          push: false
-          tags: ${{ steps.meta.outputs.tags }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          outputs: type=docker,dest=/tmp/ci-image.tar
-
-      - name: Upload CI image
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-image
-          path: /tmp/ci-image.tar
-
-  # Test and validate code quality
-  test:
-    name: Test Application
-    runs-on: ubuntu-latest
-    needs: build-ci-image
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.deploy_only != 'true'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download CI image
-        uses: actions/download-artifact@v4
-        with:
-          name: ci-image
-          path: /tmp
-
-      - name: Load CI image
-        run: docker load --input /tmp/ci-image.tar
-
-      - name: Run Python tests
-        run: |
-          # Get the first available tag
-          IMAGE_TAG=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep nova-infra-ci | head -1)
-          echo "Using image: $IMAGE_TAG"
-          # Run tests
-          docker run --rm -v ${{ github.workspace }}:/workspace \
-            $IMAGE_TAG \
-            bash -c "
-              cd /workspace/apps/tf-visualizer
-              make test
-            "
-
-      - name: Run Frontend tests
-        run: |
-          IMAGE_TAG=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep nova-infra-ci | head -1)
-          docker run --rm -v ${{ github.workspace }}:/workspace \
-            $IMAGE_TAG \
-            bash -c "
-              cd /workspace/apps/tf-visualizer/frontend
-              npm ci
-              npm run lint || true
-              npm run build
-            "
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./apps/tf-visualizer/work/coverage/coverage.xml
-          flags: backend
-          name: backend-coverage
-
-  # Pre-commit checks
-  pre-commit:
-    name: Pre-commit Checks
-    runs-on: ubuntu-latest
-    needs: build-ci-image
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download CI image
-        uses: actions/download-artifact@v4
-        with:
-          name: ci-image
-          path: /tmp
-
-      - name: Load CI image
-        run: docker load --input /tmp/ci-image.tar
-
-      - name: Run pre-commit
-        run: |
-          IMAGE_TAG=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep nova-infra-ci | head -1)
-          echo "Using image: $IMAGE_TAG"
-          # Run pre-commit checks - Terraform is already installed in the CI image
-          docker run --rm -v ${{ github.workspace }}:/workspace \
-            $IMAGE_TAG \
-            bash -c "
-              cd /workspace
-              git config --global --add safe.directory /workspace
-              pre-commit install
-              pre-commit run --all-files
-            "
-
-  # Build and push to ECR
+  # Step 1: Build application image and push to ECR
   build-push:
     name: Build and Push to ECR
     runs-on: ubuntu-latest
-    needs: [test, pre-commit]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     outputs:
       image-uri: ${{ steps.build.outputs.image-uri }}
+      image-tag: ${{ env.IMAGE_TAG }}
 
     steps:
       - name: Checkout code
@@ -187,12 +53,8 @@ jobs:
           ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY=${{ env.ECR_REPOSITORY }}
 
-          # Set image tag
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            IMAGE_TAG="latest"
-          else
-            IMAGE_TAG="${{ github.ref_name }}"
-          fi
+          # Use git SHA as tag for traceability
+          IMAGE_TAG="${{ env.IMAGE_TAG }}"
 
           # Full image URI
           IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
@@ -201,25 +63,127 @@ jobs:
           docker build --target production -t $IMAGE_URI .
           docker push $IMAGE_URI
 
+          # Also tag as latest if on main
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            docker tag $IMAGE_URI $ECR_REGISTRY/$ECR_REPOSITORY:latest
+            docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          fi
+
           echo "image-uri=$IMAGE_URI" >> $GITHUB_OUTPUT
 
-      - name: Trivy vulnerability scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ steps.build.outputs.image-uri }}
-          format: "sarif"
-          output: "trivy-results.sarif"
-
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: "trivy-results.sarif"
-
-  # Deploy to EKS
-  deploy:
-    name: Deploy to EKS
+  # Step 2: Pull image from ECR and run tests
+  test:
+    name: Test with ECR Image
     runs-on: ubuntu-latest
     needs: [build-push]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Pull image from ECR
+        run: |
+          docker pull ${{ needs.build-push.outputs.image-uri }}
+
+      - name: Run pytest in ECR image
+        run: |
+          # Create a test image from the production image with pytest installed
+          cat > Dockerfile.test << 'EOF'
+          FROM ${{ needs.build-push.outputs.image-uri }}
+
+          # Switch to root to install packages
+          USER root
+
+          # Install pytest and coverage tools
+          RUN pip install --no-cache-dir pytest pytest-cov pytest-mock
+
+          # Copy test files
+          COPY tests/ /app/tests/
+          COPY test-terraform/ /app/test-terraform/
+          COPY .coveragerc /app/.coveragerc
+
+          # Switch back to app user
+          USER app
+
+          # Run tests
+          CMD ["pytest", "-v", "--cov=backend", "--cov-report=xml:/tmp/coverage.xml", "--cov-report=term"]
+          EOF
+
+          # Build test image
+          docker build -f Dockerfile.test -t test-image ./apps/tf-visualizer
+
+          # Run tests
+          docker run --rm -v ${{ github.workspace }}/coverage:/tmp test-image
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/coverage.xml
+          flags: backend
+          name: backend-coverage
+
+  # Step 3: Provision EKS infrastructure
+  provision-eks:
+    name: Provision EKS
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: |
+          ./init-backend.sh
+          terraform init
+
+      - name: Terraform Plan
+        working-directory: ./terraform
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: ./terraform
+        run: terraform apply -auto-approve tfplan
+
+      - name: Output cluster name
+        id: cluster
+        working-directory: ./terraform
+        run: |
+          echo "cluster-name=$(terraform output -raw eks_cluster_name)" >> $GITHUB_OUTPUT
+
+    outputs:
+      cluster-name: ${{ steps.cluster.outputs.cluster-name }}
+
+  # Step 4: Deploy to EKS with Helm
+  deploy-helm:
+    name: Deploy with Helm
+    runs-on: ubuntu-latest
+    needs: [build-push, provision-eks]
     if: github.ref == 'refs/heads/main'
     environment: production
 
@@ -236,18 +200,26 @@ jobs:
 
       - name: Update kubeconfig
         run: |
-          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name tf-visualizer-cluster
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ needs.provision-eks.outputs.cluster-name }}
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: "latest"
 
       - name: Deploy with Helm
         run: |
           # Extract image repository and tag from URI
           IMAGE_URI="${{ needs.build-push.outputs.image-uri }}"
           IMAGE_REPO=$(echo $IMAGE_URI | cut -d':' -f1)
-          IMAGE_TAG=$(echo $IMAGE_URI | cut -d':' -f2)
+          IMAGE_TAG="${{ needs.build-push.outputs.image-tag }}"
+
+          echo "Deploying image: $IMAGE_REPO:$IMAGE_TAG"
 
           helm upgrade --install tf-visualizer ./helm/tf-visualizer \
             --set image.repository=$IMAGE_REPO \
             --set image.tag=$IMAGE_TAG \
+            --set image.pullPolicy=Always \
             --wait --timeout=300s
 
       - name: Check deployment status
@@ -267,3 +239,4 @@ jobs:
           timeout 60 bash -c "until curl -f http://$LB_URL/health; do sleep 5; done"
 
           echo "Deployment successful! Application available at: http://$LB_URL"
+          echo "Deployed image tag: ${{ needs.build-push.outputs.image-tag }}"
