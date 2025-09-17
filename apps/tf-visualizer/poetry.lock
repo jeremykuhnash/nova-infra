@@ -858,6 +858,21 @@ types-Jinja2 = "*"
 types-Werkzeug = "*"
 
 [[package]]
+name = "types-flask-cors"
+version = "6.0.0.20250809"
+description = "Typing stubs for Flask-Cors"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "types_flask_cors-6.0.0.20250809-py3-none-any.whl", hash = "sha256:f6d660dddab946779f4263cb561bffe275d86cb8747ce02e9fec8d340780131b"},
+    {file = "types_flask_cors-6.0.0.20250809.tar.gz", hash = "sha256:24380a2b82548634c0931d50b9aafab214eea9f85dcc04f15ab1518752a7e6aa"},
+]
+
+[package.dependencies]
+Flask = ">=2.0.0"
+
+[[package]]
 name = "types-jinja2"
 version = "2.11.9"
 description = "Typing stubs for Jinja2"
@@ -983,4 +998,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "5c99ad5b7f04f7f85f37f21742cdadb0dcd2b023adef41af83221de47e8c903e"
+content-hash = "91de7a00e3e516b28bf6d4eeca2d383a23b2ea95b51e39f29881dc5dbe515a8b"

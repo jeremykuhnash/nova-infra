@@ -14,6 +14,7 @@ python-hcl2 = "^4.3.2"
 lark = "^1.1.8"
 requests = "^2.31.0"
 gunicorn = "^21.2.0"
+types-flask-cors = "^6.0.0.20250809"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"
