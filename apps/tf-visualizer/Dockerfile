@@ -66,7 +66,7 @@ COPY frontend/public ./public
 COPY frontend/src ./src
 
 # Build the frontend (outputs to ../work/frontend/build)
-RUN npm run build && ls -la ../work/frontend/build
+RUN npm run build
 
 # Stage 4: Frontend test stage
 FROM node:18-alpine AS frontend-test
@@ -97,8 +97,8 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 COPY backend ./backend
 COPY app.py .
 
-# Copy work directory structure
-COPY work ./work
+# Create work directory structure (don't copy from host)
+RUN mkdir -p work
 
 # Copy frontend build from builder stage (from ../work/frontend/build)
 COPY --from=frontend-builder /app/work/frontend/build ./static
